@@ -1,25 +1,32 @@
 package me.ogsammenr.skyblock.ui;
 
+import eu.pb4.sgui.api.elements.GuiElement;
+import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import eu.pb4.sgui.api.gui.SimpleGui;
 import me.ogsammenr.skyblock.model.MenuData;
 import me.ogsammenr.skyblock.util.PlaceholderUtil;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.screen.ScreenHandlerType;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 public abstract class BaseMenu extends SimpleGui {
     protected final MenuData menuData;
-    protected final ServerPlayerEntity player;
+    protected final ServerPlayer player;
 
-    public BaseMenu(ServerPlayerEntity player, MenuData menuData) {
-        super(getScreenHandlerType(menuData.rows), player, false);
+    public BaseMenu(ServerPlayer player, MenuData menuData) {
+        super(getMenuType(menuData.rows > 0 ? menuData.rows : 3), player, false);
         this.player = player;
         this.menuData = menuData;
-        this.setTitle(Text.of(PlaceholderUtil.parse(player, menuData.title)));
+        this.setTitle(Component.literal(PlaceholderUtil.parse(player, menuData.title != null ? menuData.title : "Menu")));
     }
 
     public void open() {
@@ -28,27 +35,40 @@ public abstract class BaseMenu extends SimpleGui {
     }
 
     protected void build() {
-        if (menuData.items == null) return;
-
-        for (int i = 0; i < this.getSize(); i++) {
-            this.setSlot(i, new ItemStack(Items.GRAY_STAINED_GLASS_PANE).setCustomName(Text.of(" ")));
+        for (int i = 0; i < this.getContainerSize(); i++) {
+            this.setSlot(i, new ItemStack(Items.GRAY_STAINED_GLASS_PANE).setHoverName(Component.literal(" ")));
         }
 
-        menuData.items.forEach((slot, item) -> {
-            int slotIndex = Integer.parseInt(slot);
-            this.setSlot(slotIndex, createMenuItem(item));
+        if (menuData.items == null) return;
+
+        menuData.items.forEach((slotKey, item) -> {
+            GuiElement guiElement = createGuiElement(item);
+            parseSlots(slotKey).forEach(slotIndex -> {
+                if (slotIndex >= 0 && slotIndex < this.getContainerSize()) {
+                    this.setSlot(slotIndex, guiElement);
+                }
+            });
         });
     }
 
-    protected ItemStack createMenuItem(MenuData.MenuItem item) {
-        ItemStack stack = new ItemStack(Items.BARRIER); // Varsayılan olarak bariyer
-        // Gerçek eşya oluşturma mantığı (ID'den Item bulma, NBT, vb.) buraya eklenecek.
-        // Şimdilik basit tutuyoruz.
+    protected GuiElement createGuiElement(MenuData.MenuItem item) {
+        Optional<Item> optionalItem = BuiltInRegistries.ITEM.getOptional(ResourceLocation.tryParse(item.id));
+        Item mcItem = optionalItem.orElse(Items.BARRIER);
 
-        stack.setCustomName(Text.of(PlaceholderUtil.parse(player, item.name)));
-        // Lore oluşturma mantığı buraya eklenecek.
+        GuiElementBuilder builder = new GuiElementBuilder(mcItem)
+                .setCount(item.amount > 0 ? item.amount : 1)
+                .setName(Component.literal(PlaceholderUtil.parse(player, item.name)))
+                .setCallback((index, type, action, gui) -> onMenuItemClick(item));
 
-        return stack;
+        if (item.lore != null) {
+            List<Component> loreLines = new ArrayList<>();
+            for (String line : item.lore) {
+                loreLines.add(Component.literal(PlaceholderUtil.parse(player, line)));
+            }
+            builder.setLoreLines(loreLines);
+        }
+
+        return builder.build();
     }
 
     protected void onMenuItemClick(MenuData.MenuItem item) {
@@ -59,14 +79,33 @@ public abstract class BaseMenu extends SimpleGui {
 
     protected abstract void handleAction(String action);
 
-    private static ScreenHandlerType<?> getScreenHandlerType(int rows) {
+    protected List<Integer> parseSlots(String slotKey) {
+        List<Integer> slots = new ArrayList<>();
+        try {
+            if (slotKey.contains("-")) {
+                String[] parts = slotKey.split("-");
+                int start = Integer.parseInt(parts[0].trim());
+                int end = Integer.parseInt(parts[1].trim());
+                for (int i = start; i <= end; i++) {
+                    slots.add(i);
+                }
+            } else {
+                slots.add(Integer.parseInt(slotKey.trim()));
+            }
+        } catch (NumberFormatException e) {
+            // Log error
+        }
+        return slots;
+    }
+
+    private static MenuType<?> getMenuType(int rows) {
         return switch (rows) {
-            case 1 -> ScreenHandlerType.GENERIC_9X1;
-            case 2 -> ScreenHandlerType.GENERIC_9X2;
-            case 3 -> ScreenHandlerType.GENERIC_9X3;
-            case 4 -> ScreenHandlerType.GENERIC_9X4;
-            case 5 -> ScreenHandlerType.GENERIC_9X5;
-            default -> ScreenHandlerType.GENERIC_9X6;
+            case 1 -> MenuType.GENERIC_9x1;
+            case 2 -> MenuType.GENERIC_9x2;
+            case 3 -> MenuType.GENERIC_9x3;
+            case 4 -> MenuType.GENERIC_9x4;
+            case 5 -> MenuType.GENERIC_9x5;
+            default -> MenuType.GENERIC_9x6;
         };
     }
 }

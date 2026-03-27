@@ -1,163 +1,91 @@
 package me.ogsammenr.skyblock.ui;
 
-import eu.pb4.placeholders.api.PlaceholderContext;
-import eu.pb4.placeholders.api.Placeholders;
+import eu.pb4.sgui.api.elements.GuiElement;
 import eu.pb4.sgui.api.elements.GuiElementBuilder;
-import eu.pb4.sgui.api.gui.SimpleGui;
 import me.ogsammenr.skyblock.model.MenuData;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-public abstract class PaginatedMenu {
-
-    protected final MenuData data;
-    protected final ServerPlayer player;
-    protected final SimpleGui gui;
+public abstract class PaginatedMenu extends BaseMenu {
     protected int currentPage = 0;
+    // Sayfa içeriğinin hangi slotlar arasında olacağını tanımla
+    protected final int paginationStartSlot = 0;
+    protected final int paginationEndSlot = 44; // 5. sıranın sonu
 
-    public PaginatedMenu(MenuData data, ServerPlayer player) {
-        this.data = data;
-        this.player = player;
-
-        int safeRows = (data.rows >= 1 && data.rows <= 6) ? data.rows : 3;
-        MenuType<?> menuType = getMenuType(safeRows);
-        this.gui = new SimpleGui(menuType, player, false);
-
-        String safeTitle = data.title != null ? data.title : "Paginated Menu";
-        gui.setTitle(Component.literal(safeTitle.replace("&", "§")));
+    public PaginatedMenu(ServerPlayer player, MenuData menuData) {
+        super(player, menuData);
     }
 
+    @Override
     public void open() {
-        renderPage();
-        gui.open();
+        // build() içindeki item yerleşimi paginated menüler için geçerli değil.
+        super.build(); // Arka planı ve sabit eşyaları çiz
+        buildPage();
+        super.open();
     }
 
-    public void renderPage() {
-        gui.clear(); // Clear all slots before rendering
-
-        // Render global items that are present on all pages
-        if (data.items != null) {
-            renderItems(data.items);
+    protected void buildPage() {
+        if (menuData.pages == null || menuData.pages.isEmpty() || currentPage >= menuData.pages.size()) {
+            addPaginationButtons(); // Butonları yine de göster (belki sadece geri butonu)
+            return;
         }
 
-        // Render items for the current page
-        if (data.pages != null && currentPage >= 0 && currentPage < data.pages.size()) {
-            MenuData.MenuPage page = data.pages.get(currentPage);
-            if (page.items != null) {
-                renderItems(page.items);
-            }
+        // Sayfa içeriği için ayrılan alanı temizle
+        for (int i = paginationStartSlot; i <= paginationEndSlot; i++) {
+            setSlot(i, null); // Önceki sayfadan kalanları temizle
         }
-    }
 
-    private void renderItems(Map<String, MenuData.MenuItem> items) {
-        PlaceholderContext context = PlaceholderContext.of(player);
-
-        for (Map.Entry<String, MenuData.MenuItem> entry : items.entrySet()) {
-            String slotKey = entry.getKey();
-            MenuData.MenuItem itemData = entry.getValue();
-
-            String itemId = itemData.id != null ? itemData.id : "minecraft:barrier";
-            ResourceLocation resourceLocation = ResourceLocation.tryParse(itemId);
-            Item mcItem = Items.BARRIER;
-
-            if (resourceLocation != null) {
-                mcItem = BuiltInRegistries.ITEM.getOptional(resourceLocation).orElse(Items.BARRIER);
-            }
-            if (mcItem == Items.AIR) {
-                mcItem = Items.BARRIER;
-            }
-
-            GuiElementBuilder builder = new GuiElementBuilder(mcItem);
-
-            int amount = (itemData.amount > 0) ? itemData.amount : 1;
-            builder.setCount(amount);
-
-            if (itemData.name != null) {
-                Component coloredName = Component.literal(itemData.name.replace("&", "§"));
-                builder.setName(itemData.hasPlaceholder ? Placeholders.parseText(coloredName, context) : coloredName);
-            }
-
-            if (itemData.lore != null) {
-                for (String line : itemData.lore) {
-                    Component coloredLine = Component.literal(line.replace("&", "§"));
-                    builder.addLoreLine(itemData.hasPlaceholder ? Placeholders.parseText(coloredLine, context) : coloredLine);
-                }
-            }
-
-            builder.setCallback((index, clickType, actionType) -> {
-                handleAction(itemData);
+        MenuData.MenuPage pageData = menuData.pages.get(currentPage);
+        if (pageData.items != null) {
+            pageData.items.forEach((slotKey, item) -> {
+                parseSlots(slotKey).forEach(slotIndex -> {
+                    if (slotIndex >= paginationStartSlot && slotIndex <= paginationEndSlot) {
+                        setSlot(slotIndex, createGuiElement(item));
+                    }
+                });
             });
+        }
 
-            List<Integer> targetSlots = parseSlots(slotKey);
-            for (int slot : targetSlots) {
-                if (slot >= 0 && slot < gui.getSize()) {
-                    gui.setSlot(slot, builder);
-                }
-            }
+        addPaginationButtons();
+    }
+
+    protected void addPaginationButtons() {
+        // Geri butonu
+        if (currentPage > 0) {
+            GuiElement backButton = new GuiElementBuilder(Items.ARROW)
+                    .setName(Component.literal("§eGeri"))
+                    .setCallback((index, type, action, gui) -> previousPage())
+                    .build();
+            setSlot(45, backButton);
+        } else {
+             setSlot(45, new ItemStack(Items.GRAY_STAINED_GLASS_PANE).setHoverName(Component.literal(" ")));
+        }
+
+        // İleri butonu
+        if (menuData.pages != null && currentPage < menuData.pages.size() - 1) {
+            GuiElement nextButton = new GuiElementBuilder(Items.ARROW)
+                    .setName(Component.literal("§eİleri"))
+                    .setCallback((index, type, action, gui) -> nextPage())
+                    .build();
+            setSlot(53, nextButton);
+        } else {
+             setSlot(53, new ItemStack(Items.GRAY_STAINED_GLASS_PANE).setHoverName(Component.literal(" ")));
         }
     }
 
-    private void handleAction(MenuData.MenuItem item) {
-        if (item.action == null) return;
-
-        switch (item.action) {
-            case "next_page":
-                if (currentPage < data.pages.size() - 1) {
-                    currentPage++;
-                    renderPage();
-                }
-                break;
-            case "prev_page":
-                if (currentPage > 0) {
-                    currentPage--;
-                    renderPage();
-                }
-                break;
-            default:
-                handleCustomAction(item.action, item);
-                break;
+    public void nextPage() {
+        if (menuData.pages != null && currentPage < menuData.pages.size() - 1) {
+            currentPage++;
+            buildPage();
         }
     }
 
-    private List<Integer> parseSlots(String slotKey) {
-        List<Integer> slots = new ArrayList<>();
-        try {
-            if (slotKey.contains("-")) {
-                String[] parts = slotKey.split("-");
-                int start = Integer.parseInt(parts[0].trim());
-                int end = Integer.parseInt(parts[1].trim());
-                for (int i = start; i <= end; i++) {
-                    slots.add(i);
-                }
-            } else {
-                slots.add(Integer.parseInt(slotKey.trim()));
-            }
-        } catch (NumberFormatException e) {
-            // Log error for invalid slot format
+    public void previousPage() {
+        if (currentPage > 0) {
+            currentPage--;
+            buildPage();
         }
-        return slots;
     }
-
-    private static MenuType<?> getMenuType(int rows) {
-        return switch (rows) {
-            case 1 -> MenuType.GENERIC_9x1;
-            case 2 -> MenuType.GENERIC_9x2;
-            case 3 -> MenuType.GENERIC_9x3;
-            case 4 -> MenuType.GENERIC_9x4;
-            case 5 -> MenuType.GENERIC_9x5;
-            case 6 -> MenuType.GENERIC_9x6;
-            default -> MenuType.GENERIC_9x3; // Default fallback
-        };
-    }
-
-    public abstract void handleCustomAction(String action, MenuData.MenuItem item);
 }

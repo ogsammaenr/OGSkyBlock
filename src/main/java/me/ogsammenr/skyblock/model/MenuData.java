@@ -6,6 +6,7 @@ import java.util.Map;
 public class MenuData {
     public String title;
     public int rows;
+    public String handler;
     public Map<String, MenuItem> items;
     public List<MenuPage> pages;
 
@@ -63,6 +64,7 @@ public class MenuData {
         return "MenuData{" +
                 "title='" + title + '\'' +
                 ", rows=" + rows +
+                ", handler='" + handler + '\'' +
                 ", items=\n" + itemsStr.toString() +
                 ", pages=\n" + pagesStr.toString() +
                 '}';
