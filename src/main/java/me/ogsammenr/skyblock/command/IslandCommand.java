@@ -2,7 +2,9 @@ package me.ogsammenr.skyblock.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import me.ogsammenr.skyblock.level.AsyncLevelCalculator;
 import me.ogsammenr.skyblock.level.snapshot.IslandSnapshot;
 import me.ogsammenr.skyblock.level.snapshot.SnapshotEngine;
@@ -38,6 +40,14 @@ public class IslandCommand {
                         .executes(IslandCommand::handleLevelCommand)
                 )
 
+        );
+
+        dispatcher.register(Commands.literal("openmenu")
+                // Sadece OP olan (yetki seviyesi 2 ve üzeri) oyuncular kullanabilsin
+                .requires(source -> Permissions.check(source, "skyblock.openmenu", 2))
+                .then(Commands.argument("menuName", StringArgumentType.word())
+                        .executes(IslandCommand::handleOpenTestMenu)
+                )
         );
     }
 
@@ -152,8 +162,30 @@ public class IslandCommand {
         }
         ServerPlayer player = source.getPlayer();
 
-        MenuManager.openMenu(player, "values_menu");
+        MenuManager.openMenu(player, "island_values_menu");
         player.sendSystemMessage(Component.literal("§eBlock değerleri menüsü açıldı!"));
+        return 1;
+    }
+
+    private static int handleOpenTestMenu(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+
+        // Komutu konsolun değil, bir oyuncunun kullandığından emin ol
+        if (!source.isPlayer()) {
+            source.sendSystemMessage(Component.literal("§cBu komut sadece oyuncular tarafından kullanılabilir."));
+            return 0;
+        }
+
+        ServerPlayer player = source.getPlayer();
+
+        // Oyuncunun girdiği "menuName" argümanını al
+        String menuName = StringArgumentType.getString(context, "menuName");
+
+        player.sendSystemMessage(Component.literal("§7[Sistem] §e" + menuName + " §7menüsü test ediliyor..."));
+
+        // Yaptığımız modüler MenuManager'a yönlendir
+        MenuManager.openMenu(player, menuName);
+
         return 1;
     }
 }

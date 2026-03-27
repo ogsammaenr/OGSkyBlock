@@ -13,6 +13,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -28,6 +29,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 public class SkyblockMain implements ModInitializer {
 	public static final String MOD_ID = "ogskyblock";
@@ -44,6 +49,8 @@ public class SkyblockMain implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		extractDefaultMenu("test_pagination_menu.json");
+
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 			ServerPlayer player = handler.player;
 			player.sendSystemMessage(Component.literal("§eSkyblock sunucusuna hoş geldin!\n§7/§eis §7yazarak adana ışınlanabilirsin!"));
@@ -54,7 +61,7 @@ public class SkyblockMain implements ModInitializer {
 			IslandStorage.load(server);
 			BlockValueManager.loadValues();
 
-			File menuFolder = server.getServerDirectory().resolve("config/skyblock_core/menus").toFile();
+			File menuFolder = server.getServerDirectory().resolve("config/OGSkyBlock/menus").toFile();
 			MenuManager.loadAllMenus(menuFolder);
 		});
 
@@ -117,4 +124,41 @@ public class SkyblockMain implements ModInitializer {
 
 		LOGGER.info("SkyblockCore Has Been Initialized!");
 	}
+
+	/**
+	 * JAR içerisindeki varsayılan menü dosyasını config klasörüne çıkartır.
+	 * @param fileName Çıkartılacak dosyanın adı (Örn: "island_menu.json")
+	 */
+	private static void extractDefaultMenu(String fileName) {
+		// Hedef klasör: sunucu_dizini/config/OGSkyBlock/menus
+		Path configDir = FabricLoader.getInstance().getConfigDir().resolve("OGSkyBlock/menus");
+		Path targetFile = configDir.resolve(fileName);
+
+		// Eğer dosya zaten mevcutsa (sunucu sahibi düzenlemişse) işlemi iptal et ve üzerine yazma
+		if (Files.exists(targetFile)) {
+			return;
+		}
+
+		try {
+			// Hedef klasör zinciri yoksa oluştur (mkdirs mantığı)
+			Files.createDirectories(configDir);
+
+			// JAR içindeki resources/default_menus/ yolundan dosyayı okumak için Stream aç
+			String resourcePath = "/default_menus/" + fileName;
+			try (InputStream in = SkyblockMain.class.getResourceAsStream(resourcePath)) {
+				if (in == null) {
+					LOGGER.warn("[Skyblock] Uyarı: Varsayılan menü dosyası JAR içinde bulunamadı -> {}", resourcePath);
+					return;
+				}
+
+				// Stream'den gelen veriyi hedefe kopyala
+				Files.copy(in, targetFile, StandardCopyOption.REPLACE_EXISTING);
+				LOGGER.info("[Skyblock] Varsayılan menü oluşturuldu: {}", fileName);
+			}
+		} catch (Exception e) {
+			LOGGER.error("[Skyblock] Varsayılan menü dosyası ({}) çıkartılırken hata oluştu!", fileName, e);
+		}
+	}
+
+
 }

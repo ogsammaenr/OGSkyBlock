@@ -1,12 +1,7 @@
 {
+  "handler": "TestPaginationMenu",
   "title": "&aTest Paginated Menu",
   "rows": 6,
-  "items": {
-    "45-53": {
-      "id": "minecraft:black_stained_glass_pane",
-      "name": " "
-    }
-  },
   "pages": [
     {
       "items": {
@@ -20,7 +15,7 @@
         "50": {
           "id": "minecraft:arrow",
           "name": "&aNext Page",
-          "action": "next_page"
+          "action": "NEXT_PAGE"
         }
       }
     },
@@ -36,7 +31,7 @@
         "48": {
           "id": "minecraft:arrow",
           "name": "&cPrevious Page",
-          "action": "prev_page"
+          "action": "PREVIOUS_PAGE"
         }
       }
     }

@@ -5,14 +5,16 @@ import eu.pb4.sgui.api.elements.GuiElementBuilder;
 import eu.pb4.sgui.api.gui.SimpleGui;
 import me.ogsammenr.skyblock.model.MenuData;
 import me.ogsammenr.skyblock.util.PlaceholderUtil;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ItemLore; // Required for DataComponents.LORE
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,17 +28,20 @@ public abstract class BaseMenu extends SimpleGui {
         super(getMenuType(menuData.rows > 0 ? menuData.rows : 3), player, false);
         this.player = player;
         this.menuData = menuData;
-        this.setTitle(Component.literal(PlaceholderUtil.parse(player, menuData.title != null ? menuData.title : "Menu")));
+        this.setTitle(PlaceholderUtil.parseToComponent(player, menuData.title != null ? menuData.title : "Menu"));
     }
 
-    public void open() {
+    @Override
+    public boolean open() { // Corrected return type
         build();
-        super.open();
+        return super.open(); // Return super.open()
     }
 
     protected void build() {
-        for (int i = 0; i < this.getContainerSize(); i++) {
-            this.setSlot(i, new ItemStack(Items.GRAY_STAINED_GLASS_PANE).setHoverName(Component.literal(" ")));
+        ItemStack background = new ItemStack(Items.GRAY_STAINED_GLASS_PANE);
+        background.set(DataComponents.CUSTOM_NAME, Component.literal(" "));
+        for (int i = 0; i < this.getSize(); i++) { // Corrected method call
+            this.setSlot(i, background);
         }
 
         if (menuData.items == null) return;
@@ -44,7 +49,7 @@ public abstract class BaseMenu extends SimpleGui {
         menuData.items.forEach((slotKey, item) -> {
             GuiElement guiElement = createGuiElement(item);
             parseSlots(slotKey).forEach(slotIndex -> {
-                if (slotIndex >= 0 && slotIndex < this.getContainerSize()) {
+                if (slotIndex >= 0 && slotIndex < this.getSize()) { // Corrected method call
                     this.setSlot(slotIndex, guiElement);
                 }
             });
@@ -52,23 +57,49 @@ public abstract class BaseMenu extends SimpleGui {
     }
 
     protected GuiElement createGuiElement(MenuData.MenuItem item) {
-        Optional<Item> optionalItem = BuiltInRegistries.ITEM.getOptional(ResourceLocation.tryParse(item.id));
-        Item mcItem = optionalItem.orElse(Items.BARRIER);
-
-        GuiElementBuilder builder = new GuiElementBuilder(mcItem)
-                .setCount(item.amount > 0 ? item.amount : 1)
-                .setName(Component.literal(PlaceholderUtil.parse(player, item.name)))
-                .setCallback((index, type, action, gui) -> onMenuItemClick(item));
-
-        if (item.lore != null) {
-            List<Component> loreLines = new ArrayList<>();
-            for (String line : item.lore) {
-                loreLines.add(Component.literal(PlaceholderUtil.parse(player, line)));
-            }
-            builder.setLoreLines(loreLines);
+        // 1. Güvenli Item oluşturma (Aynı bıraktık)
+        Item mcItem = BuiltInRegistries.ITEM.getOptional(Identifier.tryParse(item.id))
+                .orElse(Items.BARRIER);
+        if (mcItem == Items.AIR) {
+            mcItem = Items.BARRIER;
         }
 
+        // 2. SGUI GuiElementBuilder'ı başlatıyoruz (Manuel ItemStack yerine)
+        GuiElementBuilder builder = new GuiElementBuilder(mcItem)
+                .setCount(item.amount > 0 ? item.amount : 1);
+
+        // 3. İsim ve Lore için PlaceholderUtil kullanarak Builder'a ekleme yapıyoruz
+        if (item.name != null && !item.name.isEmpty()) {
+            builder.setName(PlaceholderUtil.parseToComponent(player, item.name));
+        }
+
+        if (item.lore != null && !item.lore.isEmpty()) {
+            // SGUI Builder, lore satırlarını tek tek eklememizi sağlar.
+            // DataComponents.LORE karmaşasından bizi kurtarır.
+            for (Component loreLine : PlaceholderUtil.parseToComponents(player, item.lore)) {
+                builder.addLoreLine(loreLine);
+            }
+        }
+
+        // 4. Tıklama olayını (Callback) Builder'a ekliyoruz
+        builder.setCallback((index, type, action, gui) -> onMenuItemClick(item));
+
+        // 5. --- KANCA (HOOK) BURADA DEVREYE GİRİYOR ---
+        // Eğer alt sınıflar (Örn: ValuesMenu) eşyaya özel bir isim/lore eklemek isterse,
+        // builder nesnesini onlara gönderiyoruz. Onlar değiştirip geri yolluyor.
+        builder = customizeItem(builder, item);
+        // ----------------------------------------------
+
+        // 6. En son Builder'ı derleyip (build) GuiElement olarak döndürüyoruz.
         return builder.build();
+    }
+
+    /**
+     * Alt sınıfların eşya oluşturulmadan hemen önce müdahale edebilmesi için kanca metodu.
+     * Varsayılan olarak builder üzerinde hiçbir değişiklik yapmaz.
+     */
+    protected GuiElementBuilder customizeItem(GuiElementBuilder builder, MenuData.MenuItem item) {
+        return builder;
     }
 
     protected void onMenuItemClick(MenuData.MenuItem item) {
