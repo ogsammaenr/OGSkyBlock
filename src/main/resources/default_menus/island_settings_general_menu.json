@@ -1,0 +1,49 @@
+{
+  "handler": "GeneralSettingsMenu",
+  "title": "&8Genel Ayarlar",
+  "rows": 4,
+  "items": {
+    "0-9": {
+      "id": "minecraft:black_stained_glass_pane",
+      "name": " "
+    },
+    "17-18": {
+      "id": "minecraft:black_stained_glass_pane",
+      "name": " "
+    },
+    "26-35": {
+      "id": "minecraft:black_stained_glass_pane",
+      "name": " "
+    },
+    "10": {
+      "id": "minecraft:pig_spawn_egg",
+      "name": "&aHayvan Doğuşu",
+      "action": "SETTING_ANIMAL_SPAWNING"
+    },
+    "11": {
+      "id": "minecraft:zombie_spawn_egg",
+      "name": "&cCanavar Doğuşu",
+      "action": "SETTING_MONSTER_SPAWNING"
+    },
+    "12": {
+      "id": "minecraft:campfire",
+      "name": "&6Ateş Yayılması",
+      "action": "SETTING_FIRE_SPREAD"
+    },
+    "14": {
+      "id": "minecraft:iron_sword",
+      "name": "&eDünya PvP",
+      "action": "SETTING_OVERWORLD_PVP"
+    },
+    "15": {
+      "id": "minecraft:golden_sword",
+      "name": "&cNether PvP",
+      "action": "SETTING_NETHER_PVP"
+    },
+    "16": {
+      "id": "minecraft:end_crystal",
+      "name": "&5End PvP",
+      "action": "SETTING_END_PVP"
+    }
+  }
+}

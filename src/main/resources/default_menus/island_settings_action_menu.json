@@ -1,0 +1,121 @@
+{
+  "handler": "ActionSettingsMenu",
+  "title": "&8Koruma ve İzinler",
+  "rows": 6,
+  "pages": [
+    {
+      "items": {
+        "0-9": {
+          "id": "minecraft:white_stained_glass_pane",
+          "name": " "
+        },
+        "17-18": {
+          "id": "minecraft:white_stained_glass_pane",
+          "name": " "
+        },
+        "26-27": {
+          "id": "minecraft:white_stained_glass_pane",
+          "name": " "
+        },
+        "35-36": {
+          "id": "minecraft:white_stained_glass_pane",
+          "name": " "
+        },
+        "44-53": {
+          "id": "minecraft:white_stained_glass_pane",
+          "name": " "
+        },
+
+        "10": { "id": "minecraft:diamond_pickaxe", "name": "&eBlok Kırma", "action": "ACTION_BREAK_BLOCK" },
+        "11": { "id": "minecraft:grass_block", "name": "&eBlok Koyma", "action": "ACTION_PLACE_BLOCK" },
+        "12": { "id": "minecraft:wheat", "name": "&eEkinleri Ezme", "action": "ACTION_TRAMPLE_CROPS" },
+        "13": { "id": "minecraft:water_bucket", "name": "&eAteş Söndürme", "action": "ACTION_FIRE_EXTINGUISH" },
+        "14": { "id": "minecraft:tnt", "name": "&cTNT Hasarı", "action": "ACTION_TNT_DAMAGE" },
+        "15": { "id": "minecraft:oak_door", "name": "&eKapı Kullanımı", "action": "ACTION_USE_DOORS" },
+        "16": { "id": "minecraft:oak_fence_gate", "name": "&eÇit Kapısı Kullanımı", "action": "ACTION_USE_GATES" },
+
+        "19": { "id": "minecraft:oak_trapdoor", "name": "&eTuzak Kapısı", "action": "ACTION_USE_TRAPDOORS" },
+        "20": { "id": "minecraft:anvil", "name": "&eÖrs Kullanımı", "action": "ACTION_USE_ANVILS" },
+        "21": { "id": "minecraft:red_bed", "name": "&eYatak Kullanımı", "action": "ACTION_USE_BEDS" },
+        "22": { "id": "minecraft:beacon", "name": "&eFener Kullanımı", "action": "ACTION_USE_BEACONS" },
+        "23": { "id": "minecraft:brewing_stand", "name": "&eİksir Tezgahı", "action": "ACTION_USE_BREWING_STANDS" },
+        "24": { "id": "minecraft:enchanting_table", "name": "&eBüyü Masası", "action": "ACTION_USE_ENCHANTING_TABLE" },
+        "25": { "id": "minecraft:crafting_table", "name": "&eÇalışma Masası", "action": "ACTION_USE_WORKBENCHES" },
+
+        "28": { "id": "minecraft:jukebox", "name": "&eMüzik Kutusu", "action": "ACTION_USE_JUKEBOX" },
+        "29": { "id": "minecraft:note_block", "name": "&eNota Bloğu", "action": "ACTION_USE_NOTE_BLOCK" },
+        "30": { "id": "minecraft:chest", "name": "&eSandık/Konteyner", "action": "ACTION_USE_CONTAINERS" },
+        "31": { "id": "minecraft:dispenser", "name": "&eFırlatıcı", "action": "ACTION_USE_DISPENSERS" },
+        "32": { "id": "minecraft:dropper", "name": "&eBırakıcı", "action": "ACTION_USE_DROPPERS" },
+        "33": { "id": "minecraft:hopper", "name": "&eHuni", "action": "ACTION_USE_HOPPERS" },
+        "34": { "id": "minecraft:stone_button", "name": "&eButon Kullanımı", "action": "ACTION_USE_BUTTONS" },
+
+        "37": { "id": "minecraft:lever", "name": "&eŞalter Kullanımı", "action": "ACTION_USE_LEVERS" },
+        "38": { "id": "minecraft:stone_pressure_plate", "name": "&eBasınç Plakası", "action": "ACTION_USE_PRESSURE_PLATES" },
+        "39": { "id": "minecraft:redstone", "name": "&eKızıltaş Kullanımı", "action": "ACTION_USE_REDSTONE_ITEMS" },
+        "40": { "id": "minecraft:bucket", "name": "&eKova Kullanımı", "action": "ACTION_USE_BUCKETS" },
+        "41": { "id": "minecraft:lava_bucket", "name": "&eLav Toplama", "action": "ACTION_COLLECT_LAVA" },
+        "42": { "id": "minecraft:water_bucket", "name": "&eSu Toplama", "action": "ACTION_COLLECT_WATER" },
+        "43": { "id": "minecraft:creeper_spawn_egg", "name": "&eYaratık Yumurtası", "action": "ACTION_USE_SPAWN_EGGS" },
+
+        "53": { "id": "minecraft:arrow", "name": "&aSonraki Sayfa", "action": "NEXT_PAGE" }
+      }
+    },
+    {
+      "items": {
+        "0-9": {
+          "id": "minecraft:white_stained_glass_pane",
+          "name": " "
+        },
+        "17-18": {
+          "id": "minecraft:white_stained_glass_pane",
+          "name": " "
+        },
+        "26-27": {
+          "id": "minecraft:white_stained_glass_pane",
+          "name": " "
+        },
+        "35-36": {
+          "id": "minecraft:white_stained_glass_pane",
+          "name": " "
+        },
+        "44-53": {
+          "id": "minecraft:white_stained_glass_pane",
+          "name": " "
+        },
+
+        "45": { "id": "minecraft:arrow", "name": "&cÖnceki Sayfa", "action": "PREVIOUS_PAGE" },
+
+        "10": { "id": "minecraft:egg", "name": "&eYumurta Fırlatma", "action": "ACTION_THROW_EGGS" },
+        "11": { "id": "minecraft:splash_potion", "name": "&eİksir Fırlatma", "action": "ACTION_THROW_POTIONS" },
+        "12": { "id": "minecraft:ender_pearl", "name": "&eEnder İncisi", "action": "ACTION_USE_ENDERPEARLS" },
+        "13": { "id": "minecraft:chorus_fruit", "name": "&eKoro Meyvesi", "action": "ACTION_EAT_CHORUS_FRUIT" },
+        "14": { "id": "minecraft:name_tag", "name": "&eİsim Etiketi", "action": "ACTION_USE_NAME_TAGS" },
+        "15": { "id": "minecraft:lead", "name": "&eTasma Kullanımı", "action": "ACTION_USE_LEASH" },
+        "16": { "id": "minecraft:iron_sword", "name": "&eHayvanlara Zarar Verme", "action": "ACTION_HURT_ANIMALS" },
+
+        "19": { "id": "minecraft:diamond_sword", "name": "&eYaratıklara Zarar Verme", "action": "ACTION_HURT_MONSTERS" },
+        "20": { "id": "minecraft:wooden_sword", "name": "&cKöylülere Zarar Verme", "action": "ACTION_HURT_VILLAGERS" },
+        "21": { "id": "minecraft:wheat", "name": "&eHayvan Üretme", "action": "ACTION_BREED_ANIMALS" },
+        "22": { "id": "minecraft:milk_bucket", "name": "&eHayvan Sağma", "action": "ACTION_MILK_ANIMALS" },
+        "23": { "id": "minecraft:shears", "name": "&eHayvan Kırkma", "action": "ACTION_SHEAR_ANIMALS" },
+        "24": { "id": "minecraft:saddle", "name": "&eHayvanlara Binme", "action": "ACTION_RIDE_ANIMALS" },
+        "25": { "id": "minecraft:leather_horse_armor", "name": "&eBinek Envanteri", "action": "ACTION_MOUNT_INVENTORY" },
+
+        "28": { "id": "minecraft:emerald", "name": "&aKöylü Takası", "action": "ACTION_TRADE_WITH_VILLAGER" },
+        "29": { "id": "minecraft:armor_stand", "name": "&eZırh Askısı", "action": "ACTION_USE_ARMOR_STANDS" },
+        "30": { "id": "minecraft:item_frame", "name": "&eEşya Çerçevesi", "action": "ACTION_USE_ITEM_FRAMES" },
+        "31": { "id": "minecraft:iron_door", "name": "&cAdayı Kilitleme", "action": "ACTION_LOCK_ISLAND" },
+        "32": { "id": "minecraft:cobblestone", "name": "&eEşya Atma", "action": "ACTION_ITEM_DROP" },
+        "33": { "id": "minecraft:diamond", "name": "&eEşya Toplama", "action": "ACTION_ITEM_PICKUP" },
+        "34": { "id": "minecraft:experience_bottle", "name": "&eXP Toplama", "action": "ACTION_EXPERIENCE_PICKUP" },
+
+        "37": { "id": "minecraft:fishing_rod", "name": "&eBalık Tutma", "action": "ACTION_FISH_SCOOPING" },
+        "38": { "id": "minecraft:leather_boots", "name": "&eBuz Yürüyücüsü", "action": "ACTION_FROST_WALKER" },
+        "39": { "id": "minecraft:obsidian", "name": "&eNether Portalı", "action": "ACTION_USE_NETHER_PORTAL" },
+        "40": { "id": "minecraft:end_portal_frame", "name": "&eEnd Portalı", "action": "ACTION_USE_END_PORTAL" },
+        "41": { "id": "minecraft:turtle_egg", "name": "&eKaplumbağa Yumurtası", "action": "ACTION_TURTLE_EGGS" }
+      }
+    }
+  ]
+}

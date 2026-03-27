@@ -1,0 +1,42 @@
+{
+  "handler": "IslandMenu",
+  "title": "Sandık",
+  "rows": 5,
+  "items": {
+    "20": {
+      "id": "minecraft:grass_block",
+      "name": "Adana Git",
+      "lore": [
+        "§6Tıklayarak adana ışınlan"
+      ],
+      "action": "TELEPORT_ISLAND"
+    },
+    "24": {
+      "id": "minecraft:bamboo_sign",
+      "name": "Ada Uyeleri",
+      "lore": [
+        "§6tıklayarak ada üyelerini görüntüle"
+      ]
+    },
+    "0-8": {
+      "id": "minecraft:gray_stained_glass_pane",
+      "name": " "
+    },
+    "36-44": {
+      "id": "minecraft:gray_stained_glass_pane",
+      "name": " "
+    },
+    "9-19": {
+      "id": "minecraft:light_gray_stained_glass_pane",
+      "name": " "
+    },
+    "21-23": {
+      "id": "minecraft:light_gray_stained_glass_pane",
+      "name": " "
+    },
+    "25-35": {
+      "id": "minecraft:light_gray_stained_glass_pane",
+      "name": " "
+    }
+  }
+}

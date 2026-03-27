@@ -2,6 +2,7 @@ package me.ogsammenr.skyblock;
 
 import me.ogsammenr.skyblock.data.IslandStorage;
 import me.ogsammenr.skyblock.command.IslandCommand;
+import me.ogsammenr.skyblock.listener.ProtectionListener;
 import me.ogsammenr.skyblock.manager.BlockValueManager;
 import me.ogsammenr.skyblock.manager.IslandProtection;
 import me.ogsammenr.skyblock.manager.MenuManager;
@@ -34,7 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
-public class SkyblockMain implements ModInitializer {
+public class SkyblockMain implements ModInitializer{
 	public static final String MOD_ID = "ogskyblock";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
@@ -49,7 +50,7 @@ public class SkyblockMain implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		extractDefaultMenu("test_pagination_menu.json");
+
 
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 			ServerPlayer player = handler.player;
@@ -60,6 +61,13 @@ public class SkyblockMain implements ModInitializer {
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
 			IslandStorage.load(server);
 			BlockValueManager.loadValues();
+
+			extractDefaultMenu("test_pagination_menu.json");
+			extractDefaultMenu("island_values_menu.json");
+			extractDefaultMenu("island_menu.json");
+			extractDefaultMenu("island_settings_menu.json");
+			extractDefaultMenu("island_settings_general_menu.json");
+			extractDefaultMenu("island_settings_action_menu.json");
 
 			File menuFolder = server.getServerDirectory().resolve("config/OGSkyBlock/menus").toFile();
 			MenuManager.loadAllMenus(menuFolder);
@@ -75,47 +83,8 @@ public class SkyblockMain implements ModInitializer {
 			IslandStorage.save(server);
 		});
 
-		// Blok Kırma Koruması (Sol Tık)
-		PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, blockEntity) -> {
-			LOGGER.info("oyuncu blok kırmaya çalışıyor: " + player.getName().getString() + " - Konum: " + pos);
-			if (player instanceof ServerPlayer serverPlayer) {
-				LOGGER.info("ServerPlayer instance'ı doğrulandı: " + serverPlayer.getName().getString());
-				if (!IslandProtection.canPerformAction(serverPlayer, pos, IslandAction.BREAK_BLOCK)) {
-					serverPlayer.sendSystemMessage(Component.literal("§cBu adada blok kırma yetkiniz yok!"));
-					return false;
-				}
-			}
-			return true;
-		});
-
-		// Blok Koyma ve Etkileşim Koruması (Sağ Tık - Sandık açma, kapı açma vb.)
-		UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
-			if (player instanceof ServerPlayer serverPlayer) {
-				BlockPos pos = hitResult.getBlockPos();
-				Block block = world.getBlockState(pos).getBlock();
-
-				IslandAction actionToDetermine;
-
-				// Tıklanan blok bir sandık, fırın vb. ise:
-				if (block instanceof ChestBlock /* İleride fırın vs eklenebilir */) {
-					actionToDetermine = IslandAction.OPEN_CONTAINER;
-				}
-				// Tıklanan blok bir kapı, şalter vb. ise:
-				else if (block instanceof DoorBlock) {
-					actionToDetermine = IslandAction.INTERACT_DOOR;
-				}
-				// Hiçbiri değilse (Büyük ihtimalle elindeki bloku koymaya çalışıyor)
-				else {
-					actionToDetermine = IslandAction.PLACE_BLOCK;
-				}
-
-				if (!IslandProtection.canPerformAction(serverPlayer, pos, actionToDetermine)) {
-					serverPlayer.sendSystemMessage(Component.literal("§cBu adada bu işlemi yapma yetkiniz yok!"));
-					return InteractionResult.FAIL;
-				}
-			}
-			return InteractionResult.PASS;
-		});
+		// Ada koruması
+		ProtectionListener.register();
 
 		// Komutları kaydet
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
@@ -124,6 +93,8 @@ public class SkyblockMain implements ModInitializer {
 
 		LOGGER.info("SkyblockCore Has Been Initialized!");
 	}
+
+
 
 	/**
 	 * JAR içerisindeki varsayılan menü dosyasını config klasörüne çıkartır.

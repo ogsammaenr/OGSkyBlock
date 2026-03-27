@@ -1,0 +1,45 @@
+{
+  "handler": "SettingsHubMenu",
+  "title": "&8Ada Ayarları",
+  "rows": 3,
+  "items": {
+    "0-8": {
+      "id": "minecraft:black_stained_glass_pane",
+      "name": " "
+    },
+    "9": {
+      "id": "minecraft:black_stained_glass_pane",
+      "name": " "
+    },
+    "17": {
+      "id": "minecraft:black_stained_glass_pane",
+      "name": " "
+    },
+    "18-26": {
+      "id": "minecraft:black_stained_glass_pane",
+      "name": " "
+    },
+    "11": {
+      "id": "minecraft:comparator",
+      "name": "&eGenel Ada Ayarları",
+      "lore": [
+        "&7Mob doğuşu, PvP ve ateş",
+        "&7yayılması gibi ayarları yönetir.",
+        "",
+        "&aAçmak için tıkla!"
+      ],
+      "action": "OPEN_GENERAL_SETTINGS"
+    },
+    "15": {
+      "id": "minecraft:shield",
+      "name": "&bKoruma ve İzinler",
+      "lore": [
+        "&7Hangi rütbenin (Ziyaretçi, Üye vb.)",
+        "&7adada neleri yapabileceğini yönetir.",
+        "",
+        "&aAçmak için tıkla!"
+      ],
+      "action": "OPEN_ACTION_SETTINGS"
+    }
+  }
+}

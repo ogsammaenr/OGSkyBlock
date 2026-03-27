@@ -1,0 +1,76 @@
+{
+  "handler": "ValuesMenu",
+  "title": "Block Değerleri",
+  "rows": 5,
+  "items": {
+    "9": {
+      "id": "minecraft:cobblestone",
+      "name": "§eKırıktaş",
+      "action": "BLOCK_VALUE"
+    },
+    "10": {
+      "id": "minecraft:grass_block",
+      "name": "§eÇimen Bloğu",
+      "action": "BLOCK_VALUE"
+    },
+    "11": {
+      "id": "minecraft:iron_block",
+      "name": "§eDemir Bloğu",
+      "action": "BLOCK_VALUE"
+    },
+    "12": {
+      "id": "minecraft:gold_block",
+      "name": "§eAltın Bloğu",
+      "action": "BLOCK_VALUE"
+    },
+    "13": {
+      "id": "minecraft:diamond_block",
+      "name": "§eElmas Bloğu",
+      "action": "BLOCK_VALUE"
+    },
+    "14": {
+      "id": "minecraft:emerald_block",
+      "name": "§eZümrüt Bloğu",
+      "action": "BLOCK_VALUE"
+    },
+    "15": {
+      "id": "minecraft:netherite_block",
+      "name": "§eNetherit Bloğu",
+      "action": "BLOCK_VALUE"
+    },
+    "18": {
+      "id": "minecraft:beacon",
+      "name": "§eFener",
+      "action": "BLOCK_VALUE"
+    },
+    "19": {
+      "id": "minecraft:spawner",
+      "name": "§eSpawner",
+      "action": "BLOCK_VALUE"
+    },
+    "0-2": {
+      "id": "minecraft:gray_stained_glass_pane",
+      "name": "§7"
+    },
+    "6-8": {
+      "id": "minecraft:gray_stained_glass_pane",
+      "name": "§7"
+    },
+    "36-38": {
+      "id": "minecraft:gray_stained_glass_pane",
+      "name": "§7"
+    },
+    "42-44": {
+      "id": "minecraft:gray_stained_glass_pane",
+      "name": "§7"
+    },
+    "3-5": {
+      "id": "minecraft:light_gray_stained_glass_pane",
+      "name": "§7"
+    },
+    "39-41": {
+      "id": "minecraft:light_gray_stained_glass_pane",
+      "name": "§7"
+    }
+  }
+}

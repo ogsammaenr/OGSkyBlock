@@ -38,7 +38,7 @@ public abstract class BaseMenu extends SimpleGui {
     }
 
     protected void build() {
-        ItemStack background = new ItemStack(Items.GRAY_STAINED_GLASS_PANE);
+        ItemStack background = new ItemStack(Items.BLUE_STAINED_GLASS_PANE);
         background.set(DataComponents.CUSTOM_NAME, Component.literal(" "));
         for (int i = 0; i < this.getSize(); i++) { // Corrected method call
             this.setSlot(i, background);
