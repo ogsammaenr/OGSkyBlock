@@ -1,0 +1,44 @@
+{
+  "title": "&aTest Paginated Menu",
+  "rows": 6,
+  "items": {
+    "45-53": {
+      "id": "minecraft:black_stained_glass_pane",
+      "name": " "
+    }
+  },
+  "pages": [
+    {
+      "items": {
+        "10": {
+          "id": "minecraft:diamond",
+          "name": "&bPage 1 Item",
+          "lore": [
+            "&7This is on the first page."
+          ]
+        },
+        "50": {
+          "id": "minecraft:arrow",
+          "name": "&aNext Page",
+          "action": "next_page"
+        }
+      }
+    },
+    {
+      "items": {
+        "10": {
+          "id": "minecraft:emerald",
+          "name": "&aPage 2 Item",
+          "lore": [
+            "&7This is on the second page."
+          ]
+        },
+        "48": {
+          "id": "minecraft:arrow",
+          "name": "&cPrevious Page",
+          "action": "prev_page"
+        }
+      }
+    }
+  ]
+}
