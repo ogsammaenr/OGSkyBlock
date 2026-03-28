@@ -6,26 +6,25 @@ import me.ogsammenr.skyblock.model.Island;
 import me.ogsammenr.skyblock.model.IslandAction;
 import me.ogsammenr.skyblock.model.IslandSetting;
 import me.ogsammenr.skyblock.world.IslandRegistry;
-import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
-import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
-import net.fabricmc.fabric.api.event.player.UseBlockCallback;
-import net.fabricmc.fabric.api.event.player.UseEntityCallback;
-import net.fabricmc.fabric.api.event.player.UseItemCallback;
+import net.fabricmc.fabric.api.event.player.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.animal.sheep.Sheep;
+import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BucketItem;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.SpawnEggItem;
+import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 
 public class ProtectionListener {
 
@@ -52,23 +51,47 @@ public class ProtectionListener {
 
             BlockPos pos = hitResult.getBlockPos();
             Block block = world.getBlockState(pos).getBlock();
-            IslandAction action = IslandAction.PLACE_BLOCK; // Varsayılan: Blok koyma denemesi
+            ItemStack handItem = player.getItemInHand(hand);
 
-            // Tıklanan bloğa göre aksiyonu belirle
-            if (block instanceof DoorBlock) action = IslandAction.USE_DOORS;
-            else if (block instanceof FenceGateBlock) action = IslandAction.USE_GATES;
-            else if (block instanceof TrapDoorBlock) action = IslandAction.USE_TRAPDOORS;
-            else if (block instanceof ButtonBlock) action = IslandAction.USE_BUTTONS;
-            else if (block instanceof LeverBlock) action = IslandAction.USE_LEVERS;
-            else if (block instanceof BedBlock) action = IslandAction.USE_BEDS;
-            else if (block instanceof AnvilBlock) action = IslandAction.USE_ANVILS;
-            else if (block instanceof ChestBlock || block instanceof BarrelBlock || block instanceof ShulkerBoxBlock) {
-                action = IslandAction.USE_CONTAINERS;
+            IslandAction action = switch (block) {
+                case DoorBlock d -> IslandAction.USE_DOORS;
+                case FenceGateBlock f -> IslandAction.USE_GATES;
+                case TrapDoorBlock t -> IslandAction.USE_TRAPDOORS;
+                case ButtonBlock b -> IslandAction.USE_BUTTONS;
+                case LeverBlock l -> IslandAction.USE_LEVERS;
+                case BedBlock b -> IslandAction.USE_BEDS;
+                case AnvilBlock a -> IslandAction.USE_ANVILS;
+                case BeaconBlock b -> IslandAction.USE_BEACONS;
+                case BrewingStandBlock b -> IslandAction.USE_BREWING_STANDS;
+                case EnchantingTableBlock e -> IslandAction.USE_ENCHANTING_TABLE;
+                case CraftingTableBlock c -> IslandAction.USE_WORKBENCHES;
+                case JukeboxBlock j -> IslandAction.USE_JUKEBOX;
+                case NoteBlock n -> IslandAction.USE_NOTE_BLOCK;
+                case DropperBlock d -> IslandAction.USE_DROPPERS;
+                case DispenserBlock d -> IslandAction.USE_DISPENSERS;
+                case HopperBlock h -> IslandAction.USE_HOPPERS;
+                case ChestBlock c -> IslandAction.USE_CONTAINERS;
+                case BarrelBlock b -> IslandAction.USE_CONTAINERS;
+                case ShulkerBoxBlock s -> IslandAction.USE_CONTAINERS;
+                case DiodeBlock d -> IslandAction.USE_REDSTONE_ITEMS;
+                case RedStoneWireBlock r -> IslandAction.USE_REDSTONE_ITEMS;
+                case TurtleEggBlock t -> IslandAction.TURTLE_EGGS;
+                default -> IslandAction.PLACE_BLOCK;
+            };
+
+            if (handItem.getItem() instanceof BucketItem) {
+                if (handItem.getItem() == Items.BUCKET) {
+                    FluidState fluidState = world.getFluidState(pos);
+                    if (fluidState.is(Fluids.WATER) || fluidState.is(Fluids.FLOWING_WATER)) action = IslandAction.COLLECT_WATER;
+                    else if (fluidState.is(Fluids.LAVA) || fluidState.is(Fluids.FLOWING_LAVA)) action = IslandAction.COLLECT_LAVA;
+                } else {
+                    action = IslandAction.USE_BUCKETS;
+                }
             }
 
             if (!IslandProtection.canPerformAction(serverPlayer, pos, action)) {
                 serverPlayer.sendSystemMessage(Component.literal("§cBu adada bu eşyayla etkileşime giremezsin!"));
-                return InteractionResult.FAIL; // İptal et
+                return InteractionResult.FAIL;
             }
             return InteractionResult.PASS;
         });
@@ -84,21 +107,20 @@ public class ProtectionListener {
             Island island = IslandRegistry.getIslandAt(pos);
             if (island == null) return InteractionResult.PASS;
 
-            // Oyuncular arası savaş (PvP) kontrolü (Ayarlardan)
             if (entity instanceof Player) {
                 if (!island.getSetting(IslandSetting.OVERWORLD_PVP)) {
                     serverPlayer.sendSystemMessage(Component.literal("§cBu adada PvP kapalı!"));
                     return InteractionResult.FAIL;
                 }
-            }
-            // Varlık (Mob/Hayvan) korumaları (Aksiyonlardan)
-            else {
-                IslandAction action = null;
-                if (entity instanceof Monster) action = IslandAction.HURT_MONSTERS;
-                else if (entity instanceof Animal) action = IslandAction.HURT_ANIMALS;
-                else if (entity instanceof Villager) action = IslandAction.HURT_VILLAGERS;
-                else if (entity instanceof ArmorStand) action = IslandAction.USE_ARMOR_STANDS;
-                else if (entity instanceof ItemFrame) action = IslandAction.USE_ITEM_FRAMES;
+            } else {
+                IslandAction action = switch (entity) {
+                    case Monster m -> IslandAction.HURT_MONSTERS;
+                    case Animal a -> IslandAction.HURT_ANIMALS;
+                    case Villager v -> IslandAction.HURT_VILLAGERS;
+                    case ArmorStand a -> IslandAction.USE_ARMOR_STANDS;
+                    case ItemFrame i -> IslandAction.USE_ITEM_FRAMES;
+                    default -> null;
+                };
 
                 if (action != null && !island.canPerformAction(serverPlayer.getUUID(), action)) {
                     serverPlayer.sendSystemMessage(Component.literal("§cBu adada buna zarar veremezsin!"));
@@ -117,11 +139,24 @@ public class ProtectionListener {
             Island island = IslandRegistry.getIslandAt(pos);
             if (island == null) return InteractionResult.PASS;
 
-            IslandAction action = null;
-            if (entity instanceof Villager) action = IslandAction.TRADE_WITH_VILLAGER;
-            else if (entity instanceof ArmorStand) action = IslandAction.USE_ARMOR_STANDS;
-            else if (entity instanceof ItemFrame) action = IslandAction.USE_ITEM_FRAMES;
-            // Not: İleride elindeki makasa göre SHEAR_ANIMALS vb. eklenebilir.
+            ItemStack handItem = player.getItemInHand(hand);
+
+            IslandAction action = switch (entity) {
+                case Villager v -> IslandAction.TRADE_WITH_VILLAGER;
+                case ArmorStand a -> IslandAction.USE_ARMOR_STANDS;
+                case ItemFrame i -> IslandAction.USE_ITEM_FRAMES;
+                case AbstractHorse h -> player.isShiftKeyDown() ? IslandAction.MOUNT_INVENTORY : IslandAction.RIDE_ANIMALS;
+                case Animal a -> {
+                    Item item = handItem.getItem();
+                    if (item == Items.NAME_TAG) yield IslandAction.USE_NAME_TAGS;
+                    if (item == Items.LEAD) yield IslandAction.USE_LEASH;
+                    if (a instanceof Sheep && item == Items.SHEARS) yield IslandAction.SHEAR_ANIMALS;
+                    if (a instanceof Cow && item == Items.BUCKET) yield IslandAction.MILK_ANIMALS;
+                    if (a.isFood(handItem)) yield IslandAction.BREED_ANIMALS;
+                    yield null;
+                }
+                default -> null;
+            };
 
             if (action != null && !island.canPerformAction(serverPlayer.getUUID(), action)) {
                 serverPlayer.sendSystemMessage(Component.literal("§cBu varlıkla etkileşime giremezsin!"));
@@ -132,20 +167,24 @@ public class ProtectionListener {
     }
 
     private static void registerItemEvents() {
-        // --- 5. ELDEKİ EŞYAYI KULLANMA (SAĞ TIK BUKET/YUMURTA) ---
+        // --- 5. ELDEKİ EŞYAYI HAVAYA/BOŞLUĞA KULLANMA ---
         UseItemCallback.EVENT.register((player, world, hand) -> {
             if (!(player instanceof ServerPlayer serverPlayer)) return InteractionResult.PASS;
 
             ItemStack stack = player.getItemInHand(hand);
-            IslandAction action = null;
+            Item item = stack.getItem();
 
-            if (stack.getItem() instanceof BucketItem) action = IslandAction.USE_BUCKETS;
-            else if (stack.getItem() instanceof SpawnEggItem) action = IslandAction.USE_SPAWN_EGGS;
+            IslandAction action = switch (item) {
+                case SpawnEggItem s -> IslandAction.USE_SPAWN_EGGS;
+                case EnderpearlItem e -> IslandAction.USE_ENDERPEARLS;
+                case ThrowablePotionItem t -> IslandAction.THROW_POTIONS;
+                case Item i when i == Items.EGG -> IslandAction.THROW_EGGS;
+                case Item i when i == Items.CHORUS_FRUIT -> IslandAction.EAT_CHORUS_FRUIT;
+                default -> null;
+            };
 
             if (action != null) {
-                // Not: UseItemCallback anında bir blok lokasyonuna sahip değildir (havaya tıklanmış olabilir).
-                // Tam güvenlik için oyuncunun bulunduğu adaya göre kontrol edilir.
-                BlockPos pos = player.blockPosition();
+                BlockPos pos = serverPlayer.blockPosition();
                 Island island = IslandRegistry.getIslandAt(pos);
 
                 if (island != null && !island.canPerformAction(serverPlayer.getUUID(), action)) {
@@ -156,5 +195,6 @@ public class ProtectionListener {
             return InteractionResult.PASS;
         });
 
+        
     }
 }
