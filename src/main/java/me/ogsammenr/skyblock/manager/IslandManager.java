@@ -30,7 +30,7 @@ import java.util.UUID;
 import static me.ogsammenr.skyblock.SkyblockMain.SKYBLOCK_WORLD_KEY;
 
 public class IslandManager {
-    public static final Path ISLANDS_DIR = FabricLoader.getInstance().getConfigDir().resolve("skyblock_core/islands");
+    public static final Path ISLANDS_DIR = FabricLoader.getInstance().getConfigDir().resolve("OGSkyBlock/islands");
 
     public static void spawnPlayerToIsland(ServerPlayer player) {
         ServerLevel skyblockWorld = player.level().getServer().getLevel(SKYBLOCK_WORLD_KEY);
