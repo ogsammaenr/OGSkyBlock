@@ -28,10 +28,8 @@ public abstract class FireBlockMixin {
         // Ateşin bulunduğu konumdaki ada nesnesini alıyoruz
         var island = IslandRegistry.getIslandAt(pos);
 
-        System.out.println("Ates yandi");
         // Eğer bir ada bölgesindeysek ve FIRE_SPREAD ayarı kapalı (false) ise işlemi iptal et
         if (island != null && !island.getSetting(IslandSetting.FIRE_SPREAD)) {
-            System.out.println("ates engellendi");
             ci.cancel();
         }
     }

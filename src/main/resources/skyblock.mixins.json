@@ -6,7 +6,8 @@
 		"FireBlockMixin",
 		"ItemEntityMixin",
 		"LevelMixin",
-		"ServerPlayerMixin"
+		"ServerPlayerMixin",
+		"SpawnPlacementsMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
