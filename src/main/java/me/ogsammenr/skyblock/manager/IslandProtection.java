@@ -34,7 +34,7 @@ public class IslandProtection {
                     Permissions.check(player, BREAK_BYPASS_PERMISSION, 4);
 
             // Kritik Ada Eylemleri -> Bypass edilemez! (Sadece adanın COOP/OWNER'ı veya üstteki ADMIN yapabilir)
-            case TNT_DAMAGE, LOCK_ISLAND -> false;
+            case LOCK_ISLAND -> false;
 
             // Geriye kalan 48 adet etkileşim (Sandık, Mob, Kapı, Kova vb.) -> INTERACT_BYPASS yetkisi gerektirir
             default ->

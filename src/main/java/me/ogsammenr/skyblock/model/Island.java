@@ -33,6 +33,7 @@ public class Island {
         this.members.put(ownerUUID, IslandRole.OWNER);
 
         setDefaultPermissions();
+        setDefaultSettings();
     }
 
     /**
@@ -137,6 +138,7 @@ public class Island {
         settings.put(IslandSetting.OVERWORLD_PVP, false);    // PvP varsayılan olarak kapalı
         settings.put(IslandSetting.NETHER_PVP, false);
         settings.put(IslandSetting.END_PVP, false);
+        settings.put(IslandSetting.TNT_DAMAGE, false);
     }
 
     private void setDefaultPermissions() {
@@ -145,7 +147,6 @@ public class Island {
         permissions.put(IslandAction.PLACE_BLOCK, IslandRole.MEMBER);
         permissions.put(IslandAction.TRAMPLE_CROPS, IslandRole.MEMBER);
         permissions.put(IslandAction.FIRE_EXTINGUISH, IslandRole.MEMBER);
-        permissions.put(IslandAction.TNT_DAMAGE, IslandRole.OWNER); // Sadece ada sahibi TNT patlatabilir
 
         // --- Kullanım ve Temel Etkileşim ---
         permissions.put(IslandAction.USE_DOORS, IslandRole.MEMBER);

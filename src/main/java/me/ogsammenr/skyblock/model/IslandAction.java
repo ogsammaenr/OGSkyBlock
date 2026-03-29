@@ -10,7 +10,6 @@ public enum IslandAction {
     PLACE_BLOCK,
     TRAMPLE_CROPS,
     FIRE_EXTINGUISH,
-    TNT_DAMAGE,
 
     // --- Kullanım ve Temel Etkileşim ---
     USE_DOORS,

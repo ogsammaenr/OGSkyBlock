@@ -30,6 +30,11 @@
       "name": "&6Ateş Yayılması",
       "action": "SETTING_FIRE_SPREAD"
     },
+    "13": {
+      "id": "minecraft:tnt",
+      "name": "&eTNT Hasarı",
+      "action": "SETTING_TNT_DAMAGE"
+    },
     "14": {
       "id": "minecraft:iron_sword",
       "name": "&eDünya PvP",
