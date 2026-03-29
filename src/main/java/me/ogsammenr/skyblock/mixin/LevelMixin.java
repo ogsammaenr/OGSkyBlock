@@ -45,8 +45,6 @@ public abstract class LevelMixin {
             // Adada TNT hasarı kapalıysa
             if (island != null && !island.getSetting(IslandSetting.TNT_DAMAGE)) {
 
-                System.out.println("[Skyblock] TNT blok hasari engellendi, NONE uygulaniyor.");
-
                 // 1. Orijinal hasarlı patlamayı durdur
                 ci.cancel();
 

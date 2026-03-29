@@ -3,6 +3,7 @@
 	"package": "me.ogsammenr.skyblock.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
+		"FireBlockMixin",
 		"ItemEntityMixin",
 		"LevelMixin",
 		"ServerPlayerMixin"
