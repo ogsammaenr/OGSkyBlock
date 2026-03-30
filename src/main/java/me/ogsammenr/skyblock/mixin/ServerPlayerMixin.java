@@ -1,14 +1,11 @@
 package me.ogsammenr.skyblock.mixin;
 
 import me.ogsammenr.skyblock.SkyblockMain;
+import me.ogsammenr.skyblock.manager.IslandProtection;
 import me.ogsammenr.skyblock.model.IslandAction;
-import me.ogsammenr.skyblock.model.Island;
-import me.ogsammenr.skyblock.world.IslandRegistry;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
@@ -30,8 +27,7 @@ public class ServerPlayerMixin {
 
         if (!player.level().dimension().equals(SkyblockMain.SKYBLOCK_WORLD_KEY)) return;
 
-        Island island = IslandRegistry.getIslandAt(player.blockPosition());
-        if (island != null && !island.canPerformAction(player.getUUID(), IslandAction.ITEM_DROP)) {
+        if (IslandProtection.canPerformAction(player, player.blockPosition(), IslandAction.ITEM_DROP)) {
             player.sendSystemMessage(Component.literal("§cBu adada yere eşya atamazsın!"));
 
             // İşlemi iptal et (Eşya sunucuda hiç silinmez)
@@ -58,8 +54,7 @@ public class ServerPlayerMixin {
 
         if (!player.level().dimension().equals(SkyblockMain.SKYBLOCK_WORLD_KEY)) return;
 
-        Island island = IslandRegistry.getIslandAt(player.blockPosition());
-        if (island != null && !island.canPerformAction(player.getUUID(), IslandAction.ITEM_DROP)) {
+        if (IslandProtection.canPerformAction(player, player.blockPosition(),  IslandAction.ITEM_DROP)) {
 
             if (stack == null || stack.isEmpty()) return;
 

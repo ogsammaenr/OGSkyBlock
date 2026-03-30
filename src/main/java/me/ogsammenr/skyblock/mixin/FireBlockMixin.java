@@ -1,5 +1,6 @@
 package me.ogsammenr.skyblock.mixin;
 
+import me.ogsammenr.skyblock.model.Island;
 import me.ogsammenr.skyblock.model.IslandSetting;
 import me.ogsammenr.skyblock.world.IslandRegistry;
 import net.minecraft.core.BlockPos;
@@ -26,7 +27,7 @@ public abstract class FireBlockMixin {
     )
     private void onFireTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random, CallbackInfo ci) {
         // Ateşin bulunduğu konumdaki ada nesnesini alıyoruz
-        var island = IslandRegistry.getIslandAt(pos);
+        Island island = IslandRegistry.getIslandAt(pos);
 
         // Eğer bir ada bölgesindeysek ve FIRE_SPREAD ayarı kapalı (false) ise işlemi iptal et
         if (island != null && !island.getSetting(IslandSetting.FIRE_SPREAD)) {

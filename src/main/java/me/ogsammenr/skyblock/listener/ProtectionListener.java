@@ -22,6 +22,7 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
@@ -38,6 +39,7 @@ public class ProtectionListener {
         // --- 1. BLOK KIRMA ---
         PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, blockEntity) -> {
             if (!(player instanceof ServerPlayer serverPlayer)) return true;
+
             if (!IslandProtection.canPerformAction(serverPlayer, pos, IslandAction.BREAK_BLOCK)) {
                 serverPlayer.sendSystemMessage(Component.literal("§cBu adada blok kırma yetkiniz yok!"));
                 return false;
@@ -53,46 +55,21 @@ public class ProtectionListener {
             Block block = world.getBlockState(pos).getBlock();
             ItemStack handItem = player.getItemInHand(hand);
 
-            IslandAction action = switch (block) {
-                case DoorBlock d -> IslandAction.USE_DOORS;
-                case FenceGateBlock f -> IslandAction.USE_GATES;
-                case TrapDoorBlock t -> IslandAction.USE_TRAPDOORS;
-                case ButtonBlock b -> IslandAction.USE_BUTTONS;
-                case LeverBlock l -> IslandAction.USE_LEVERS;
-                case BedBlock b -> IslandAction.USE_BEDS;
-                case AnvilBlock a -> IslandAction.USE_ANVILS;
-                case BeaconBlock b -> IslandAction.USE_BEACONS;
-                case BrewingStandBlock b -> IslandAction.USE_BREWING_STANDS;
-                case EnchantingTableBlock e -> IslandAction.USE_ENCHANTING_TABLE;
-                case CraftingTableBlock c -> IslandAction.USE_WORKBENCHES;
-                case JukeboxBlock j -> IslandAction.USE_JUKEBOX;
-                case NoteBlock n -> IslandAction.USE_NOTE_BLOCK;
-                case DropperBlock d -> IslandAction.USE_DROPPERS;
-                case DispenserBlock d -> IslandAction.USE_DISPENSERS;
-                case HopperBlock h -> IslandAction.USE_HOPPERS;
-                case ChestBlock c -> IslandAction.USE_CONTAINERS;
-                case BarrelBlock b -> IslandAction.USE_CONTAINERS;
-                case ShulkerBoxBlock s -> IslandAction.USE_CONTAINERS;
-                case DiodeBlock d -> IslandAction.USE_REDSTONE_ITEMS;
-                case RedStoneWireBlock r -> IslandAction.USE_REDSTONE_ITEMS;
-                case TurtleEggBlock t -> IslandAction.TURTLE_EGGS;
-                default -> IslandAction.PLACE_BLOCK;
-            };
+            IslandAction action = getActionForBlock(block);
 
-            if (handItem.getItem() instanceof BucketItem) {
-                if (handItem.getItem() == Items.BUCKET) {
-                    FluidState fluidState = world.getFluidState(pos);
-                    if (fluidState.is(Fluids.WATER) || fluidState.is(Fluids.FLOWING_WATER)) action = IslandAction.COLLECT_WATER;
-                    else if (fluidState.is(Fluids.LAVA) || fluidState.is(Fluids.FLOWING_LAVA)) action = IslandAction.COLLECT_LAVA;
-                } else {
-                    action = IslandAction.USE_BUCKETS;
+            if (action == null) {
+                action = getActionForHandItem(handItem.getItem(), world, pos);
+                // Eğer blok veya kova koyulacaksa koordinatı tıklanan yüzeye göre kaydır
+                if (action == IslandAction.PLACE_BLOCK || action == IslandAction.USE_BUCKETS) {
+                    pos = pos.relative(hitResult.getDirection());
                 }
             }
 
-            if (!IslandProtection.canPerformAction(serverPlayer, pos, action)) {
-                serverPlayer.sendSystemMessage(Component.literal("§cBu adada bu eşyayla etkileşime giremezsin!"));
+            if (action != null && !IslandProtection.canPerformAction(serverPlayer, pos, action)) {
+                serverPlayer.sendSystemMessage(Component.literal("§cBu adada bu eylemi gerçekleştiremezsin!"));
                 return InteractionResult.FAIL;
             }
+
             return InteractionResult.PASS;
         });
     }
@@ -104,25 +81,16 @@ public class ProtectionListener {
             if (!world.dimension().equals(SkyblockMain.SKYBLOCK_WORLD_KEY)) return InteractionResult.PASS;
 
             BlockPos pos = entity.blockPosition();
-            Island island = IslandRegistry.getIslandAt(pos);
-            if (island == null) return InteractionResult.PASS;
 
             if (entity instanceof Player) {
-                if (!island.getSetting(IslandSetting.OVERWORLD_PVP)) {
+                Island island = IslandRegistry.getIslandAt(pos);
+                if (island != null && !island.getSetting(IslandSetting.OVERWORLD_PVP)) {
                     serverPlayer.sendSystemMessage(Component.literal("§cBu adada PvP kapalı!"));
                     return InteractionResult.FAIL;
                 }
             } else {
-                IslandAction action = switch (entity) {
-                    case Monster m -> IslandAction.HURT_MONSTERS;
-                    case Animal a -> IslandAction.HURT_ANIMALS;
-                    case Villager v -> IslandAction.HURT_VILLAGERS;
-                    case ArmorStand a -> IslandAction.USE_ARMOR_STANDS;
-                    case ItemFrame i -> IslandAction.USE_ITEM_FRAMES;
-                    default -> null;
-                };
-
-                if (action != null && !island.canPerformAction(serverPlayer.getUUID(), action)) {
+                IslandAction action = getActionForEntityAttack(entity);
+                if (action != null && !IslandProtection.canPerformAction(serverPlayer, pos, action)) {
                     serverPlayer.sendSystemMessage(Component.literal("§cBu adada buna zarar veremezsin!"));
                     return InteractionResult.FAIL;
                 }
@@ -136,29 +104,11 @@ public class ProtectionListener {
             if (!world.dimension().equals(SkyblockMain.SKYBLOCK_WORLD_KEY)) return InteractionResult.PASS;
 
             BlockPos pos = entity.blockPosition();
-            Island island = IslandRegistry.getIslandAt(pos);
-            if (island == null) return InteractionResult.PASS;
-
             ItemStack handItem = player.getItemInHand(hand);
 
-            IslandAction action = switch (entity) {
-                case Villager v -> IslandAction.TRADE_WITH_VILLAGER;
-                case ArmorStand a -> IslandAction.USE_ARMOR_STANDS;
-                case ItemFrame i -> IslandAction.USE_ITEM_FRAMES;
-                case AbstractHorse h -> player.isShiftKeyDown() ? IslandAction.MOUNT_INVENTORY : IslandAction.RIDE_ANIMALS;
-                case Animal a -> {
-                    Item item = handItem.getItem();
-                    if (item == Items.NAME_TAG) yield IslandAction.USE_NAME_TAGS;
-                    if (item == Items.LEAD) yield IslandAction.USE_LEASH;
-                    if (a instanceof Sheep && item == Items.SHEARS) yield IslandAction.SHEAR_ANIMALS;
-                    if (a instanceof Cow && item == Items.BUCKET) yield IslandAction.MILK_ANIMALS;
-                    if (a.isFood(handItem)) yield IslandAction.BREED_ANIMALS;
-                    yield null;
-                }
-                default -> null;
-            };
+            IslandAction action = getActionForEntityInteract(entity, handItem, player.isShiftKeyDown());
 
-            if (action != null && !island.canPerformAction(serverPlayer.getUUID(), action)) {
+            if (action != null && !IslandProtection.canPerformAction(serverPlayer, pos, action)) {
                 serverPlayer.sendSystemMessage(Component.literal("§cBu varlıkla etkileşime giremezsin!"));
                 return InteractionResult.FAIL;
             }
@@ -172,29 +122,105 @@ public class ProtectionListener {
             if (!(player instanceof ServerPlayer serverPlayer)) return InteractionResult.PASS;
 
             ItemStack stack = player.getItemInHand(hand);
-            Item item = stack.getItem();
-
-            IslandAction action = switch (item) {
-                case SpawnEggItem s -> IslandAction.USE_SPAWN_EGGS;
-                case EnderpearlItem e -> IslandAction.USE_ENDERPEARLS;
-                case ThrowablePotionItem t -> IslandAction.THROW_POTIONS;
-                case Item i when i == Items.EGG -> IslandAction.THROW_EGGS;
-                case Item i when i == Items.CHORUS_FRUIT -> IslandAction.EAT_CHORUS_FRUIT;
-                default -> null;
-            };
+            IslandAction action = getActionForItemUsage(stack.getItem());
 
             if (action != null) {
                 BlockPos pos = serverPlayer.blockPosition();
-                Island island = IslandRegistry.getIslandAt(pos);
-
-                if (island != null && !island.canPerformAction(serverPlayer.getUUID(), action)) {
+                if (!IslandProtection.canPerformAction(serverPlayer, pos, action)) {
                     serverPlayer.sendSystemMessage(Component.literal("§cBu adada bu eşyayı kullanamazsın!"));
                     return InteractionResult.FAIL;
                 }
             }
             return InteractionResult.PASS;
         });
+    }
 
-        
+    // ===================================================================================
+    // YARDIMCI (HELPER) METOTLAR - Eylem tespitini merkezi ve okunabilir hale getirir
+    // ===================================================================================
+
+    private static IslandAction getActionForBlock(Block block) {
+        return switch (block) {
+            case DoorBlock d -> IslandAction.USE_DOORS;
+            case FenceGateBlock f -> IslandAction.USE_GATES;
+            case TrapDoorBlock t -> IslandAction.USE_TRAPDOORS;
+            case ButtonBlock b -> IslandAction.USE_BUTTONS;
+            case LeverBlock l -> IslandAction.USE_LEVERS;
+            case BedBlock b -> IslandAction.USE_BEDS;
+            case AnvilBlock a -> IslandAction.USE_ANVILS;
+            case BeaconBlock b -> IslandAction.USE_BEACONS;
+            case BrewingStandBlock b -> IslandAction.USE_BREWING_STANDS;
+            case EnchantingTableBlock e -> IslandAction.USE_ENCHANTING_TABLE;
+            case CraftingTableBlock c -> IslandAction.USE_WORKBENCHES;
+            case JukeboxBlock j -> IslandAction.USE_JUKEBOX;
+            case NoteBlock n -> IslandAction.USE_NOTE_BLOCK;
+            case DropperBlock d -> IslandAction.USE_DROPPERS;
+            case DispenserBlock d -> IslandAction.USE_DISPENSERS;
+            case HopperBlock h -> IslandAction.USE_HOPPERS;
+            case ChestBlock c -> IslandAction.USE_CONTAINERS;
+            case BarrelBlock b -> IslandAction.USE_CONTAINERS;
+            case ShulkerBoxBlock s -> IslandAction.USE_CONTAINERS;
+            case DiodeBlock d -> IslandAction.USE_REDSTONE_ITEMS;
+            case RedStoneWireBlock r -> IslandAction.USE_REDSTONE_ITEMS;
+            case TurtleEggBlock t -> IslandAction.TURTLE_EGGS;
+            default -> null;
+        };
+    }
+
+    private static IslandAction getActionForHandItem(Item item, Level world, BlockPos pos) {
+        if (item instanceof BucketItem) {
+            if (item == Items.BUCKET) {
+                FluidState fluidState = world.getFluidState(pos);
+                if (fluidState.is(Fluids.WATER) || fluidState.is(Fluids.FLOWING_WATER)) return IslandAction.COLLECT_WATER;
+                if (fluidState.is(Fluids.LAVA) || fluidState.is(Fluids.FLOWING_LAVA)) return IslandAction.COLLECT_LAVA;
+            }
+            return IslandAction.USE_BUCKETS;
+        }
+        if (item instanceof BlockItem || item instanceof SignItem || item instanceof HangingEntityItem ||
+                item instanceof HoeItem || item instanceof ShovelItem || item instanceof AxeItem || item == Items.FLINT_AND_STEEL) {
+            return IslandAction.PLACE_BLOCK;
+        }
+        return null;
+    }
+
+    private static IslandAction getActionForEntityAttack(Entity entity) {
+        return switch (entity) {
+            case Monster m -> IslandAction.HURT_MONSTERS;
+            case Animal a -> IslandAction.HURT_ANIMALS;
+            case Villager v -> IslandAction.HURT_VILLAGERS;
+            case ArmorStand a -> IslandAction.USE_ARMOR_STANDS;
+            case ItemFrame i -> IslandAction.USE_ITEM_FRAMES;
+            default -> null;
+        };
+    }
+
+    private static IslandAction getActionForEntityInteract(Entity entity, ItemStack handItem, boolean isShiftKeyDown) {
+        return switch (entity) {
+            case Villager v -> IslandAction.TRADE_WITH_VILLAGER;
+            case ArmorStand a -> IslandAction.USE_ARMOR_STANDS;
+            case ItemFrame i -> IslandAction.USE_ITEM_FRAMES;
+            case AbstractHorse h -> isShiftKeyDown ? IslandAction.MOUNT_INVENTORY : IslandAction.RIDE_ANIMALS;
+            case Animal a -> {
+                Item item = handItem.getItem();
+                if (item == Items.NAME_TAG) yield IslandAction.USE_NAME_TAGS;
+                if (item == Items.LEAD) yield IslandAction.USE_LEASH;
+                if (a instanceof Sheep && item == Items.SHEARS) yield IslandAction.SHEAR_ANIMALS;
+                if (a instanceof Cow && item == Items.BUCKET) yield IslandAction.MILK_ANIMALS;
+                if (a.isFood(handItem)) yield IslandAction.BREED_ANIMALS;
+                yield null;
+            }
+            default -> null;
+        };
+    }
+
+    private static IslandAction getActionForItemUsage(Item item) {
+        return switch (item) {
+            case SpawnEggItem s -> IslandAction.USE_SPAWN_EGGS;
+            case EnderpearlItem e -> IslandAction.USE_ENDERPEARLS;
+            case ThrowablePotionItem t -> IslandAction.THROW_POTIONS;
+            case Item i when i == Items.EGG -> IslandAction.THROW_EGGS;
+            case Item i when i == Items.CHORUS_FRUIT -> IslandAction.EAT_CHORUS_FRUIT;
+            default -> null;
+        };
     }
 }

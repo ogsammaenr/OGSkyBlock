@@ -1,5 +1,6 @@
 package me.ogsammenr.skyblock.mixin;
 
+import me.ogsammenr.skyblock.model.Island;
 import me.ogsammenr.skyblock.model.IslandSetting;
 import me.ogsammenr.skyblock.world.IslandRegistry;
 import net.minecraft.core.BlockPos;
@@ -40,7 +41,7 @@ public abstract class LevelMixin {
         if (interaction != Level.ExplosionInteraction.NONE) {
 
             BlockPos pos = BlockPos.containing(x, y, z);
-            var island = IslandRegistry.getIslandAt(pos);
+            Island island = IslandRegistry.getIslandAt(pos);
 
             // Adada TNT hasarı kapalıysa
             if (island != null && !island.getSetting(IslandSetting.TNT_DAMAGE)) {

@@ -1,5 +1,6 @@
 package me.ogsammenr.skyblock.mixin;
 
+import me.ogsammenr.skyblock.model.Island;
 import me.ogsammenr.skyblock.model.IslandSetting;
 import me.ogsammenr.skyblock.world.IslandRegistry;
 import net.minecraft.core.BlockPos;
@@ -33,15 +34,28 @@ public abstract class SpawnPlacementsMixin {
     ) {
         // Sadece DOĞAL doğmaları ve CHUNK OLUŞUMU sırasındaki doğmaları hedef alıyoruz.
         if (entitySpawnReason == EntitySpawnReason.NATURAL || entitySpawnReason == EntitySpawnReason.CHUNK_GENERATION) {
-            // Sadece düşman yaratıkları engellemek için kategori kontrolü
-            if (entityType.getCategory() == MobCategory.MONSTER) {
 
-                // DÜZELTME 2: pos yerine parametredeki blockPos kullanıldı
-                var island = IslandRegistry.getIslandAt(blockPos);
+            Island island = IslandRegistry.getIslandAt(blockPos);
 
-                // Eğer ada varsa ve canavar doğma ayarı kapalıysa, doğmayı reddet
-                if (island != null && !island.getSetting(IslandSetting.MONSTER_SPAWNING)) {
-                    cir.setReturnValue(false); // Spawn iptal edildi.
+            // Eğer koordinatta bir ada yoksa kontrole gerek yok, işlemi normal akışına bırak.
+            if (island != null) {
+
+                MobCategory category = entityType.getCategory();
+
+                // 1. CANAVAR KONTROLÜ
+                if (category == MobCategory.MONSTER) {
+                    if (!island.getSetting(IslandSetting.MONSTER_SPAWNING)) {
+                        cir.setReturnValue(false);
+                        return;
+                    }
+                }
+
+                // 2. HAYVAN KONTROLÜ (Kara hayvanları, Su canlıları ve Süs balıkları)
+                if (category == MobCategory.CREATURE || category == MobCategory.WATER_CREATURE || category == MobCategory.WATER_AMBIENT ) {
+                    if (!island.getSetting(IslandSetting.ANIMAL_SPAWNING)) {
+                        cir.setReturnValue(false);
+                        return;
+                    }
                 }
             }
         }
