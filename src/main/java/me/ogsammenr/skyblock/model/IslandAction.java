@@ -10,6 +10,7 @@ public enum IslandAction {
     PLACE_BLOCK,
     TRAMPLE_CROPS,
     FIRE_EXTINGUISH,
+    IGNITE_FIRE,
 
     // --- Kullanım ve Temel Etkileşim ---
     USE_DOORS,
@@ -19,8 +20,6 @@ public enum IslandAction {
     USE_BEDS,
     USE_BEACONS,
     USE_BREWING_STANDS,
-    USE_ENCHANTING_TABLE,
-    USE_WORKBENCHES,
     USE_JUKEBOX,
     USE_NOTE_BLOCK,
 

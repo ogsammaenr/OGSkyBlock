@@ -40,7 +40,12 @@ public class ProtectionListener {
         PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, blockEntity) -> {
             if (!(player instanceof ServerPlayer serverPlayer)) return true;
 
-            if (!IslandProtection.canPerformAction(serverPlayer, pos, IslandAction.BREAK_BLOCK)) {
+            IslandAction action = switch (state.getBlock()) {
+                case BaseFireBlock f -> IslandAction.FIRE_EXTINGUISH;
+                default -> IslandAction.BREAK_BLOCK;
+            };
+
+            if (!IslandProtection.canPerformAction(serverPlayer, pos, action)) {
                 serverPlayer.sendSystemMessage(Component.literal("§cBu adada blok kırma yetkiniz yok!"));
                 return false;
             }
@@ -60,7 +65,7 @@ public class ProtectionListener {
             if (action == null) {
                 action = getActionForHandItem(handItem.getItem(), world, pos);
                 // Eğer blok veya kova koyulacaksa koordinatı tıklanan yüzeye göre kaydır
-                if (action == IslandAction.PLACE_BLOCK || action == IslandAction.USE_BUCKETS) {
+                if (action == IslandAction.PLACE_BLOCK || action == IslandAction.USE_BUCKETS || action == IslandAction.IGNITE_FIRE) {
                     pos = pos.relative(hitResult.getDirection());
                 }
             }
@@ -117,12 +122,20 @@ public class ProtectionListener {
     }
 
     private static void registerItemEvents() {
-        // --- 5. ELDEKİ EŞYAYI HAVAYA/BOŞLUĞA KULLANMA ---
+        // --- 5. ELDEKİ EŞYAYI HAVAYA/SIVIYA KULLANMA ---
         UseItemCallback.EVENT.register((player, world, hand) -> {
             if (!(player instanceof ServerPlayer serverPlayer)) return InteractionResult.PASS;
 
             ItemStack stack = player.getItemInHand(hand);
-            IslandAction action = getActionForItemUsage(stack.getItem());
+            Item item = stack.getItem();
+
+            // 1. Eşya bir kova ise, işlemi yardımcı metoda (Helper Method) devret
+            if (item instanceof BucketItem) {
+                return handleBucketInteraction(serverPlayer, world, item);
+            }
+
+            // 2. Kova harici diğer eşyalar (Yumurta, İksir vb.)
+            IslandAction action = getActionForItemUsage(item);
 
             if (action != null) {
                 BlockPos pos = serverPlayer.blockPosition();
@@ -131,6 +144,7 @@ public class ProtectionListener {
                     return InteractionResult.FAIL;
                 }
             }
+
             return InteractionResult.PASS;
         });
     }
@@ -150,8 +164,6 @@ public class ProtectionListener {
             case AnvilBlock a -> IslandAction.USE_ANVILS;
             case BeaconBlock b -> IslandAction.USE_BEACONS;
             case BrewingStandBlock b -> IslandAction.USE_BREWING_STANDS;
-            case EnchantingTableBlock e -> IslandAction.USE_ENCHANTING_TABLE;
-            case CraftingTableBlock c -> IslandAction.USE_WORKBENCHES;
             case JukeboxBlock j -> IslandAction.USE_JUKEBOX;
             case NoteBlock n -> IslandAction.USE_NOTE_BLOCK;
             case DropperBlock d -> IslandAction.USE_DROPPERS;
@@ -162,22 +174,18 @@ public class ProtectionListener {
             case ShulkerBoxBlock s -> IslandAction.USE_CONTAINERS;
             case DiodeBlock d -> IslandAction.USE_REDSTONE_ITEMS;
             case RedStoneWireBlock r -> IslandAction.USE_REDSTONE_ITEMS;
-            case TurtleEggBlock t -> IslandAction.TURTLE_EGGS;
+            case DaylightDetectorBlock d -> IslandAction.USE_REDSTONE_ITEMS;
             default -> null;
         };
     }
 
     private static IslandAction getActionForHandItem(Item item, Level world, BlockPos pos) {
-        if (item instanceof BucketItem) {
-            if (item == Items.BUCKET) {
-                FluidState fluidState = world.getFluidState(pos);
-                if (fluidState.is(Fluids.WATER) || fluidState.is(Fluids.FLOWING_WATER)) return IslandAction.COLLECT_WATER;
-                if (fluidState.is(Fluids.LAVA) || fluidState.is(Fluids.FLOWING_LAVA)) return IslandAction.COLLECT_LAVA;
-            }
-            return IslandAction.USE_BUCKETS;
+        if (item == Items.FLINT_AND_STEEL || item == Items.FIRE_CHARGE) {
+            return  IslandAction.IGNITE_FIRE;
         }
+
         if (item instanceof BlockItem || item instanceof SignItem || item instanceof HangingEntityItem ||
-                item instanceof HoeItem || item instanceof ShovelItem || item instanceof AxeItem || item == Items.FLINT_AND_STEEL) {
+                item instanceof HoeItem || item instanceof ShovelItem || item instanceof AxeItem) {
             return IslandAction.PLACE_BLOCK;
         }
         return null;
@@ -222,5 +230,51 @@ public class ProtectionListener {
             case Item i when i == Items.CHORUS_FRUIT -> IslandAction.EAT_CHORUS_FRUIT;
             default -> null;
         };
+    }
+
+    // ===================================================================================
+    // KOVA (BUCKET) ÖZEL KORUMASI (RAYCAST İLE)
+    // ===================================================================================
+    private static InteractionResult handleBucketInteraction(ServerPlayer player, Level world, Item item) {
+        // Boş kova sıvı kaynağını hedefler, dolu kova katı bloğu hedefler.
+        net.minecraft.world.level.ClipContext.Fluid fluidMode = (item == Items.BUCKET)
+                ? net.minecraft.world.level.ClipContext.Fluid.SOURCE_ONLY
+                : net.minecraft.world.level.ClipContext.Fluid.NONE;
+
+        // Işın (Raycast) Hesaplaması
+        double range = player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE);
+        net.minecraft.world.phys.Vec3 start = player.getEyePosition();
+        net.minecraft.world.phys.Vec3 end = start.add(player.getViewVector(1.0F).scale(range));
+
+        net.minecraft.world.phys.BlockHitResult hitResult = world.clip(
+                new net.minecraft.world.level.ClipContext(start, end, net.minecraft.world.level.ClipContext.Block.OUTLINE, fluidMode, player)
+        );
+
+        // Eğer ışın bir yere çarptıysa
+        if (hitResult.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
+            BlockPos targetPos = hitResult.getBlockPos();
+            IslandAction action;
+
+            if (item == Items.BUCKET) { // Nereden sıvı alıyor?
+                FluidState fluidState = world.getFluidState(targetPos);
+                if (fluidState.is(Fluids.WATER) || fluidState.is(Fluids.FLOWING_WATER)) action = IslandAction.COLLECT_WATER;
+                else if (fluidState.is(Fluids.LAVA) || fluidState.is(Fluids.FLOWING_LAVA)) action = IslandAction.COLLECT_LAVA;
+                else action = IslandAction.USE_BUCKETS;
+            } else { // Nereye sıvı koyuyor?
+                action = IslandAction.USE_BUCKETS;
+                targetPos = targetPos.relative(hitResult.getDirection());
+            }
+
+            // Yetki Kontrolü
+            if (!IslandProtection.canPerformAction(player, targetPos, action)) {
+                player.sendSystemMessage(Component.literal("§cBu adada kova kullanamazsın!"));
+
+                // İptal edildikten sonra istemcinin (Client) kafasının karışmasını önle
+                player.inventoryMenu.broadcastChanges();
+                return InteractionResult.FAIL;
+            }
+        }
+
+        return InteractionResult.PASS;
     }
 }

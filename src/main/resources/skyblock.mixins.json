@@ -9,7 +9,8 @@
     "ItemEntityMixin",
     "LevelMixin",
     "ServerPlayerMixin",
-    "SpawnPlacementsMixin"
+    "SpawnPlacementsMixin",
+    "TurtleEggBlockMixin"
   ],
   "injectors": {
     "defaultRequire": 1

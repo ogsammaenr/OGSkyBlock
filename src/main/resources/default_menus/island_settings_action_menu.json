@@ -114,7 +114,9 @@
         "38": { "id": "minecraft:leather_boots", "name": "&eBuz Yürüyücüsü", "action": "ACTION_FROST_WALKER" },
         "39": { "id": "minecraft:obsidian", "name": "&eNether Portalı", "action": "ACTION_USE_NETHER_PORTAL" },
         "40": { "id": "minecraft:end_portal_frame", "name": "&eEnd Portalı", "action": "ACTION_USE_END_PORTAL" },
-        "41": { "id": "minecraft:turtle_egg", "name": "&eKaplumbağa Yumurtası", "action": "ACTION_TURTLE_EGGS" }
+        "41": { "id": "minecraft:turtle_egg", "name": "&eKaplumbağa Yumurtası", "action": "ACTION_TURTLE_EGGS" },
+        "42": { "id": "minecraft:campfire", "name": "&Ateş Yakma", "action": "ACTION_IGNITE_FIRE" },
+        "43": { "id": "minecraft:fire_charge", "name": "&eAteş Sondürme", "action": "ACTION_FIRE_EXTINGUISH" }
       }
     }
   ]

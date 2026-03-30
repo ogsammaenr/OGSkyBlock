@@ -27,7 +27,7 @@ public class ServerPlayerMixin {
 
         if (!player.level().dimension().equals(SkyblockMain.SKYBLOCK_WORLD_KEY)) return;
 
-        if (IslandProtection.canPerformAction(player, player.blockPosition(), IslandAction.ITEM_DROP)) {
+        if (!IslandProtection.canPerformAction(player, player.blockPosition(), IslandAction.ITEM_DROP)) {
             player.sendSystemMessage(Component.literal("§cBu adada yere eşya atamazsın!"));
 
             // İşlemi iptal et (Eşya sunucuda hiç silinmez)
@@ -54,7 +54,7 @@ public class ServerPlayerMixin {
 
         if (!player.level().dimension().equals(SkyblockMain.SKYBLOCK_WORLD_KEY)) return;
 
-        if (IslandProtection.canPerformAction(player, player.blockPosition(),  IslandAction.ITEM_DROP)) {
+        if (!IslandProtection.canPerformAction(player, player.blockPosition(),  IslandAction.ITEM_DROP)) {
 
             if (stack == null || stack.isEmpty()) return;
 

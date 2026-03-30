@@ -33,7 +33,7 @@ public class ItemEntityMixin {
             BlockPos pos = itemEntity.blockPosition();
 
             // Eğer eşya bir adanın sınırları içindeyse ve oyuncunun ITEM_PICKUP yetkisi yoksa...
-            if (IslandProtection.canPerformAction(serverPlayer, pos, IslandAction.ITEM_PICKUP)) {
+            if (!IslandProtection.canPerformAction(serverPlayer, pos, IslandAction.ITEM_PICKUP)) {
 
                 // Metodu anında durdur! Oyuncu eşyayı alamaz, eşya yerde kalmaya devam eder.
                 ci.cancel();

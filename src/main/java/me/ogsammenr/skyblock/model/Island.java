@@ -147,6 +147,7 @@ public class Island {
         permissions.put(IslandAction.PLACE_BLOCK, IslandRole.MEMBER);
         permissions.put(IslandAction.TRAMPLE_CROPS, IslandRole.MEMBER);
         permissions.put(IslandAction.FIRE_EXTINGUISH, IslandRole.MEMBER);
+        permissions.put(IslandAction.IGNITE_FIRE, IslandRole.TRUSTED);
 
         // --- Kullanım ve Temel Etkileşim ---
         permissions.put(IslandAction.USE_DOORS, IslandRole.MEMBER);
@@ -156,8 +157,6 @@ public class Island {
         permissions.put(IslandAction.USE_BEDS, IslandRole.MEMBER);
         permissions.put(IslandAction.USE_BEACONS, IslandRole.TRUSTED);
         permissions.put(IslandAction.USE_BREWING_STANDS, IslandRole.TRUSTED);
-        permissions.put(IslandAction.USE_ENCHANTING_TABLE, IslandRole.MEMBER);
-        permissions.put(IslandAction.USE_WORKBENCHES, IslandRole.VISITOR); // Herkes çalışma masasını kullanabilir
         permissions.put(IslandAction.USE_JUKEBOX, IslandRole.MEMBER);
         permissions.put(IslandAction.USE_NOTE_BLOCK, IslandRole.MEMBER);
 
