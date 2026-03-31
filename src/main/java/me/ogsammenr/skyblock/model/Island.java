@@ -202,7 +202,7 @@ public class Island {
         permissions.put(IslandAction.ITEM_DROP, IslandRole.MEMBER);
         permissions.put(IslandAction.ITEM_PICKUP, IslandRole.MEMBER);
         permissions.put(IslandAction.EXPERIENCE_PICKUP, IslandRole.MEMBER);
-        permissions.put(IslandAction.FISH_SCOOPING, IslandRole.MEMBER);
+        permissions.put(IslandAction.USE_FISHING_ROD, IslandRole.MEMBER);
         permissions.put(IslandAction.FROST_WALKER, IslandRole.MEMBER);
         permissions.put(IslandAction.USE_NETHER_PORTAL, IslandRole.MEMBER);
         permissions.put(IslandAction.USE_END_PORTAL, IslandRole.MEMBER);

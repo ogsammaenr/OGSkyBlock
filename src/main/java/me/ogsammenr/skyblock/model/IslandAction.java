@@ -46,6 +46,7 @@ public enum IslandAction {
     EAT_CHORUS_FRUIT,
     USE_NAME_TAGS,
     USE_LEASH,
+    USE_FISHING_ROD,
 
     // --- Varlık (Entity) Etkileşimi ---
     HURT_ANIMALS,
@@ -64,8 +65,7 @@ public enum IslandAction {
     LOCK_ISLAND,
     ITEM_DROP,
     ITEM_PICKUP,
-    EXPERIENCE_PICKUP, // Yazım hatası düzeltildi (EXPERINCE -> EXPERIENCE)
-    FISH_SCOOPING,
+    EXPERIENCE_PICKUP,
     FROST_WALKER,
     USE_NETHER_PORTAL,
     USE_END_PORTAL,

@@ -21,6 +21,13 @@ import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
+import net.minecraft.world.entity.vehicle.boat.AbstractChestBoat;
+import net.minecraft.world.entity.vehicle.boat.Boat;
+import net.minecraft.world.entity.vehicle.boat.ChestBoat;
+import net.minecraft.world.entity.vehicle.minecart.Minecart;
+import net.minecraft.world.entity.vehicle.minecart.MinecartChest;
+import net.minecraft.world.entity.vehicle.minecart.MinecartHopper;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
@@ -180,15 +187,20 @@ public class ProtectionListener {
     }
 
     private static IslandAction getActionForHandItem(Item item, Level world, BlockPos pos) {
-        if (item == Items.FLINT_AND_STEEL || item == Items.FIRE_CHARGE) {
-            return  IslandAction.IGNITE_FIRE;
-        }
+        return switch (item) {
+            case SpawnEggItem s -> IslandAction.USE_SPAWN_EGGS;
 
-        if (item instanceof BlockItem || item instanceof SignItem || item instanceof HangingEntityItem ||
-                item instanceof HoeItem || item instanceof ShovelItem || item instanceof AxeItem) {
-            return IslandAction.PLACE_BLOCK;
-        }
-        return null;
+            case SignItem s -> IslandAction.PLACE_BLOCK;
+            case BlockItem b -> IslandAction.PLACE_BLOCK;
+            case HangingEntityItem h -> IslandAction.PLACE_BLOCK;
+            case HoeItem h -> IslandAction.PLACE_BLOCK;
+            case ShovelItem s -> IslandAction.PLACE_BLOCK;
+            case AxeItem a -> IslandAction.PLACE_BLOCK;
+
+            case Item i when i == Items.FLINT_AND_STEEL || i == Items.FIRE_CHARGE -> IslandAction.IGNITE_FIRE;
+
+            default -> null;
+        };
     }
 
     private static IslandAction getActionForEntityAttack(Entity entity) {
@@ -207,7 +219,25 @@ public class ProtectionListener {
             case Villager v -> IslandAction.TRADE_WITH_VILLAGER;
             case ArmorStand a -> IslandAction.USE_ARMOR_STANDS;
             case ItemFrame i -> IslandAction.USE_ITEM_FRAMES;
+
+            // Atlar, Eşekler ve Katırlar
             case AbstractHorse h -> isShiftKeyDown ? IslandAction.MOUNT_INVENTORY : IslandAction.RIDE_ANIMALS;
+
+            // YENİ VE OPTİMİZE: Bot Sandıkları (AbstractChestBoat kullanıyoruz ki tüm alt sınıfları kapsasın)
+            case AbstractChestBoat cb -> {
+                // Eğer oyuncu eğiliyorsa VEYA botun içinde biri varsa (doluysa)
+                if (isShiftKeyDown || !cb.getPassengers().isEmpty()) {
+                    yield IslandAction.MOUNT_INVENTORY; // Sandık açmaya çalışıyor
+                }
+                // Boşsa ve eğilmiyorsa
+                yield IslandAction.RIDE_ANIMALS; // Binmeye çalışıyor
+            }
+            case AbstractBoat b -> IslandAction.RIDE_ANIMALS;
+
+            case MinecartChest cm -> IslandAction.MOUNT_INVENTORY;
+            case MinecartHopper hm -> IslandAction.MOUNT_INVENTORY;
+            case Minecart m -> IslandAction.RIDE_ANIMALS;
+
             case Animal a -> {
                 Item item = handItem.getItem();
                 if (item == Items.NAME_TAG) yield IslandAction.USE_NAME_TAGS;
@@ -226,7 +256,8 @@ public class ProtectionListener {
             case SpawnEggItem s -> IslandAction.USE_SPAWN_EGGS;
             case EnderpearlItem e -> IslandAction.USE_ENDERPEARLS;
             case ThrowablePotionItem t -> IslandAction.THROW_POTIONS;
-            case Item i when i == Items.EGG -> IslandAction.THROW_EGGS;
+            case EggItem e -> IslandAction.THROW_EGGS;
+            case FishingRodItem f -> IslandAction.USE_FISHING_ROD;
             case Item i when i == Items.CHORUS_FRUIT -> IslandAction.EAT_CHORUS_FRUIT;
             default -> null;
         };

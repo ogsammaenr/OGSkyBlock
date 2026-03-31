@@ -110,7 +110,7 @@
         "33": { "id": "minecraft:diamond", "name": "&eEşya Toplama", "action": "ACTION_ITEM_PICKUP" },
         "34": { "id": "minecraft:experience_bottle", "name": "&eXP Toplama", "action": "ACTION_EXPERIENCE_PICKUP" },
 
-        "37": { "id": "minecraft:fishing_rod", "name": "&eBalık Tutma", "action": "ACTION_FISH_SCOOPING" },
+        "37": { "id": "minecraft:fishing_rod", "name": "&eOlta Kullanımı", "action": "ACTION_USE_FISHGING_ROD" },
         "38": { "id": "minecraft:leather_boots", "name": "&eBuz Yürüyücüsü", "action": "ACTION_FROST_WALKER" },
         "39": { "id": "minecraft:obsidian", "name": "&eNether Portalı", "action": "ACTION_USE_NETHER_PORTAL" },
         "40": { "id": "minecraft:end_portal_frame", "name": "&eEnd Portalı", "action": "ACTION_USE_END_PORTAL" },
