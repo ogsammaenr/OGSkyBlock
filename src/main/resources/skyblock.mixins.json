@@ -9,6 +9,7 @@
     "FireBlockMixin",
     "ItemEntityMixin",
     "LevelMixin",
+    "MinecartItemMixin",
     "ServerPlayerMixin",
     "SpawnPlacementsMixin",
     "TurtleEggBlockMixin"

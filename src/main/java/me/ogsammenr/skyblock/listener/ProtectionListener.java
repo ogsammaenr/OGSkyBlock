@@ -12,6 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.animal.sheep.Sheep;
 import net.minecraft.world.entity.animal.cow.Cow;
@@ -29,10 +30,14 @@ import net.minecraft.world.entity.vehicle.minecart.Minecart;
 import net.minecraft.world.entity.vehicle.minecart.MinecartChest;
 import net.minecraft.world.entity.vehicle.minecart.MinecartHopper;
 import net.minecraft.world.item.*;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 
 public class ProtectionListener {
 
@@ -72,7 +77,8 @@ public class ProtectionListener {
             if (action == null) {
                 action = getActionForHandItem(handItem.getItem(), world, pos);
                 // Eğer blok veya kova koyulacaksa koordinatı tıklanan yüzeye göre kaydır
-                if (action == IslandAction.PLACE_BLOCK || action == IslandAction.USE_BUCKETS || action == IslandAction.IGNITE_FIRE) {
+                if (action == IslandAction.PLACE_BLOCK || action == IslandAction.USE_BUCKETS ||
+                        action == IslandAction.IGNITE_FIRE || action == IslandAction.PLACE_VEHICLE) {
                     pos = pos.relative(hitResult.getDirection());
                 }
             }
@@ -136,12 +142,12 @@ public class ProtectionListener {
             ItemStack stack = player.getItemInHand(hand);
             Item item = stack.getItem();
 
-            // 1. Eşya bir kova ise, işlemi yardımcı metoda (Helper Method) devret
-            if (item instanceof BucketItem) {
-                return handleBucketInteraction(serverPlayer, world, item);
+            // 1. DÜZELTME: Eşya bir Kova VEYA Bot ise, işlemi Raycast metoduna devret
+            if (item instanceof BucketItem || item instanceof BoatItem) {
+                return handleRaycastItemInteraction(serverPlayer, world, item);
             }
 
-            // 2. Kova harici diğer eşyalar (Yumurta, İksir vb.)
+            // 2. Kova ve Bot harici diğer eşyalar (Yumurta, İksir vb.)
             IslandAction action = getActionForItemUsage(item);
 
             if (action != null) {
@@ -223,7 +229,6 @@ public class ProtectionListener {
             // Atlar, Eşekler ve Katırlar
             case AbstractHorse h -> isShiftKeyDown ? IslandAction.MOUNT_INVENTORY : IslandAction.RIDE_ANIMALS;
 
-            // YENİ VE OPTİMİZE: Bot Sandıkları (AbstractChestBoat kullanıyoruz ki tüm alt sınıfları kapsasın)
             case AbstractChestBoat cb -> {
                 // Eğer oyuncu eğiliyorsa VEYA botun içinde biri varsa (doluysa)
                 if (isShiftKeyDown || !cb.getPassengers().isEmpty()) {
@@ -258,47 +263,60 @@ public class ProtectionListener {
             case ThrowablePotionItem t -> IslandAction.THROW_POTIONS;
             case EggItem e -> IslandAction.THROW_EGGS;
             case FishingRodItem f -> IslandAction.USE_FISHING_ROD;
+            case MinecartItem m -> IslandAction.PLACE_VEHICLE; // YENİ EKLENEN SATIR
             case Item i when i == Items.CHORUS_FRUIT -> IslandAction.EAT_CHORUS_FRUIT;
             default -> null;
         };
     }
 
     // ===================================================================================
-    // KOVA (BUCKET) ÖZEL KORUMASI (RAYCAST İLE)
+    // KOVA VE BOT (ARAÇ) ÖZEL KORUMASI (RAYCAST İLE)
     // ===================================================================================
-    private static InteractionResult handleBucketInteraction(ServerPlayer player, Level world, Item item) {
-        // Boş kova sıvı kaynağını hedefler, dolu kova katı bloğu hedefler.
-        net.minecraft.world.level.ClipContext.Fluid fluidMode = (item == Items.BUCKET)
-                ? net.minecraft.world.level.ClipContext.Fluid.SOURCE_ONLY
-                : net.minecraft.world.level.ClipContext.Fluid.NONE;
+    private static InteractionResult handleRaycastItemInteraction(ServerPlayer player, Level world, Item item) {
+        // Botlar tüm sıvıları (ANY), Boş kova sadece sıvı kaynaklarını (SOURCE_ONLY), Dolu kova sıvı aramaz (NONE)
+        ClipContext.Fluid fluidMode;
+        if (item instanceof BoatItem) {
+            fluidMode = ClipContext.Fluid.ANY;
+        } else if (item == Items.BUCKET) {
+            fluidMode = ClipContext.Fluid.SOURCE_ONLY;
+        } else {
+            fluidMode = ClipContext.Fluid.NONE;
+        }
 
         // Işın (Raycast) Hesaplaması
-        double range = player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE);
-        net.minecraft.world.phys.Vec3 start = player.getEyePosition();
-        net.minecraft.world.phys.Vec3 end = start.add(player.getViewVector(1.0F).scale(range));
+        double range = player.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE);
+        Vec3 start = player.getEyePosition();
+        Vec3 end = start.add(player.getViewVector(1.0F).scale(range));
 
-        net.minecraft.world.phys.BlockHitResult hitResult = world.clip(
-                new net.minecraft.world.level.ClipContext(start, end, net.minecraft.world.level.ClipContext.Block.OUTLINE, fluidMode, player)
+        BlockHitResult hitResult = world.clip(
+                new ClipContext(start, end, ClipContext.Block.OUTLINE, fluidMode, player)
         );
 
-        // Eğer ışın bir yere çarptıysa
-        if (hitResult.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
+        // Eğer ışın bir yere çarptıysa (Suya veya Bloğa)
+        if (hitResult.getType() == HitResult.Type.BLOCK) {
             BlockPos targetPos = hitResult.getBlockPos();
             IslandAction action;
 
-            if (item == Items.BUCKET) { // Nereden sıvı alıyor?
+            if (item instanceof BoatItem) {
+                // Oyuncu bot yerleştiriyor
+                action = IslandAction.PLACE_VEHICLE;
+            }
+            else if (item == Items.BUCKET) {
+                // Nereden sıvı alıyor?
                 FluidState fluidState = world.getFluidState(targetPos);
                 if (fluidState.is(Fluids.WATER) || fluidState.is(Fluids.FLOWING_WATER)) action = IslandAction.COLLECT_WATER;
                 else if (fluidState.is(Fluids.LAVA) || fluidState.is(Fluids.FLOWING_LAVA)) action = IslandAction.COLLECT_LAVA;
                 else action = IslandAction.USE_BUCKETS;
-            } else { // Nereye sıvı koyuyor?
+            }
+            else {
+                // Nereye sıvı koyuyor?
                 action = IslandAction.USE_BUCKETS;
                 targetPos = targetPos.relative(hitResult.getDirection());
             }
 
-            // Yetki Kontrolü
+            // Hedeflenen bloğun koordinatı (targetPos) üzerinden yetki kontrolü
             if (!IslandProtection.canPerformAction(player, targetPos, action)) {
-                player.sendSystemMessage(Component.literal("§cBu adada kova kullanamazsın!"));
+                player.sendSystemMessage(Component.literal("§cBu adada bunu kullanamazsın!"));
 
                 // İptal edildikten sonra istemcinin (Client) kafasının karışmasını önle
                 player.inventoryMenu.broadcastChanges();

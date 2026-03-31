@@ -60,6 +60,7 @@ public enum IslandAction {
     TRADE_WITH_VILLAGER,
     USE_ARMOR_STANDS,
     USE_ITEM_FRAMES,
+    PLACE_VEHICLE,
 
     // --- Dünya ve Mekanikler ---
     LOCK_ISLAND,
