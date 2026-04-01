@@ -1,6 +1,7 @@
 package me.ogsammenr.skyblock.mixin;
 
 import me.ogsammenr.skyblock.manager.IslandProtection;
+import me.ogsammenr.skyblock.model.Island;
 import me.ogsammenr.skyblock.model.IslandAction;
 import me.ogsammenr.skyblock.world.IslandRegistry;
 import net.minecraft.core.BlockPos;
@@ -32,7 +33,7 @@ public abstract class BasePressurePlateBlockMixin {
 
         // Plakayı tetiklemeye çalışan varlık bir oyuncuysa (null veya eşya değilse)
         if (entity instanceof ServerPlayer player) {
-            var island = IslandRegistry.getIslandAt(pos);
+            Island island = IslandRegistry.getIslandAt(pos);
 
             // Oyuncunun yetkisi yoksa, plakanın çökmesini ve sinyal üretmesini kökünden engelle
             if (island != null && !IslandProtection.canPerformAction(player, pos, IslandAction.USE_PRESSURE_PLATES)) {

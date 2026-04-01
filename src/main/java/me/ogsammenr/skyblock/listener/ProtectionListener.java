@@ -26,6 +26,7 @@ import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
 import net.minecraft.world.entity.vehicle.boat.AbstractChestBoat;
 import net.minecraft.world.entity.vehicle.boat.Boat;
 import net.minecraft.world.entity.vehicle.boat.ChestBoat;
+import net.minecraft.world.entity.vehicle.minecart.AbstractMinecart;
 import net.minecraft.world.entity.vehicle.minecart.Minecart;
 import net.minecraft.world.entity.vehicle.minecart.MinecartChest;
 import net.minecraft.world.entity.vehicle.minecart.MinecartHopper;
@@ -38,6 +39,8 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+
+import static me.ogsammenr.skyblock.util.MessageUtil.sendDenyMessage;
 
 public class ProtectionListener {
 
@@ -58,7 +61,7 @@ public class ProtectionListener {
             };
 
             if (!IslandProtection.canPerformAction(serverPlayer, pos, action)) {
-                serverPlayer.sendSystemMessage(Component.literal("§cBu adada blok kırma yetkiniz yok!"));
+                sendDenyMessage(serverPlayer, action);
                 return false;
             }
             return true;
@@ -84,7 +87,7 @@ public class ProtectionListener {
             }
 
             if (action != null && !IslandProtection.canPerformAction(serverPlayer, pos, action)) {
-                serverPlayer.sendSystemMessage(Component.literal("§cBu adada bu eylemi gerçekleştiremezsin!"));
+                sendDenyMessage(serverPlayer, action);
                 return InteractionResult.FAIL;
             }
 
@@ -109,7 +112,7 @@ public class ProtectionListener {
             } else {
                 IslandAction action = getActionForEntityAttack(entity);
                 if (action != null && !IslandProtection.canPerformAction(serverPlayer, pos, action)) {
-                    serverPlayer.sendSystemMessage(Component.literal("§cBu adada buna zarar veremezsin!"));
+                    sendDenyMessage(serverPlayer, action);
                     return InteractionResult.FAIL;
                 }
             }
@@ -127,7 +130,7 @@ public class ProtectionListener {
             IslandAction action = getActionForEntityInteract(entity, handItem, player.isShiftKeyDown());
 
             if (action != null && !IslandProtection.canPerformAction(serverPlayer, pos, action)) {
-                serverPlayer.sendSystemMessage(Component.literal("§cBu varlıkla etkileşime giremezsin!"));
+                sendDenyMessage(serverPlayer, action);
                 return InteractionResult.FAIL;
             }
             return InteractionResult.PASS;
@@ -153,7 +156,7 @@ public class ProtectionListener {
             if (action != null) {
                 BlockPos pos = serverPlayer.blockPosition();
                 if (!IslandProtection.canPerformAction(serverPlayer, pos, action)) {
-                    serverPlayer.sendSystemMessage(Component.literal("§cBu adada bu eşyayı kullanamazsın!"));
+                    sendDenyMessage(serverPlayer, action);
                     return InteractionResult.FAIL;
                 }
             }
@@ -188,6 +191,10 @@ public class ProtectionListener {
             case DiodeBlock d -> IslandAction.USE_REDSTONE_ITEMS;
             case RedStoneWireBlock r -> IslandAction.USE_REDSTONE_ITEMS;
             case DaylightDetectorBlock d -> IslandAction.USE_REDSTONE_ITEMS;
+            case ChiseledBookShelfBlock cbs-> IslandAction.INTERACT_SHELFS;
+            case ShelfBlock sb -> IslandAction.INTERACT_SHELFS;
+            case ComposterBlock c -> IslandAction.USE_COMPOSTERS;
+
             default -> null;
         };
     }
@@ -216,6 +223,8 @@ public class ProtectionListener {
             case Villager v -> IslandAction.HURT_VILLAGERS;
             case ArmorStand a -> IslandAction.USE_ARMOR_STANDS;
             case ItemFrame i -> IslandAction.USE_ITEM_FRAMES;
+            case AbstractBoat b -> IslandAction.BREAK_VEHICLE;
+            case AbstractMinecart m -> IslandAction.BREAK_VEHICLE;
             default -> null;
         };
     }
@@ -316,8 +325,7 @@ public class ProtectionListener {
 
             // Hedeflenen bloğun koordinatı (targetPos) üzerinden yetki kontrolü
             if (!IslandProtection.canPerformAction(player, targetPos, action)) {
-                player.sendSystemMessage(Component.literal("§cBu adada bunu kullanamazsın!"));
-
+                sendDenyMessage(player, action);
                 // İptal edildikten sonra istemcinin (Client) kafasının karışmasını önle
                 player.inventoryMenu.broadcastChanges();
                 return InteractionResult.FAIL;
@@ -326,4 +334,5 @@ public class ProtectionListener {
 
         return InteractionResult.PASS;
     }
+
 }

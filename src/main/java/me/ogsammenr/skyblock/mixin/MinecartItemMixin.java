@@ -13,6 +13,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import static me.ogsammenr.skyblock.util.MessageUtil.sendDenyMessage;
+
 @Mixin(MinecartItem.class)
 public abstract class MinecartItemMixin {
 
@@ -29,8 +31,7 @@ public abstract class MinecartItemMixin {
             // Bu sayede pos.relative() kaymalarından kurtulmuş oluruz.
             if (!IslandProtection.canPerformAction(serverPlayer, context.getClickedPos(), IslandAction.PLACE_VEHICLE)) {
 
-                serverPlayer.sendSystemMessage(Component.literal("§cBu adada vagon yerleştiremezsin!"));
-
+                sendDenyMessage(serverPlayer, IslandAction.PLACE_VEHICLE);
                 // İstemciye ve Sunucuya bu işlemin kesinlikle BAŞARISIZ olduğunu bildiriyoruz
                 cir.setReturnValue(InteractionResult.FAIL);
             }

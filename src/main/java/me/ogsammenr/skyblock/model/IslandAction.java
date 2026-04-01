@@ -22,6 +22,8 @@ public enum IslandAction {
     USE_BREWING_STANDS,
     USE_JUKEBOX,
     USE_NOTE_BLOCK,
+    USE_COMPOSTERS,
+    INTERACT_SHELFS,
 
     // --- Depolama ve Konteynerler ---
     USE_CONTAINERS,    // Sandık, Fıçı, Shulker vb.
@@ -61,6 +63,7 @@ public enum IslandAction {
     USE_ARMOR_STANDS,
     USE_ITEM_FRAMES,
     PLACE_VEHICLE,
+    BREAK_VEHICLE,
 
     // --- Dünya ve Mekanikler ---
     LOCK_ISLAND,

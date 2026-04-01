@@ -62,8 +62,6 @@ public abstract class TurtleEggBlockMixin {
             return !IslandProtection.canPerformAction(player, pos, IslandAction.TURTLE_EGGS);
         }
 
-        // 2. Eylemi yapan bir mob veya başka bir varlıksa adayı koru
-        // (İstenirse bu kısım IslandSetting.MONSTER_GRIEFING gibi bir ayara da bağlanabilir)
         return true;
     }
 }

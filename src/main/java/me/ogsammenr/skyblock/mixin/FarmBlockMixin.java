@@ -44,11 +44,6 @@ public abstract class FarmBlockMixin {
                     ci.cancel(); // Oyuncunun tarlayı bozma yetkisi yoksa iptal et
                 }
             }
-            // 2. Zıplayan varlık bir MOB, HAYVAN veya EŞYA ise direkt iptal et
-            // (Adadaki ekinlerin yaratıklar yüzünden bozulmasını engeller)
-            else {
-                ci.cancel();
-            }
         }
     }
 }

@@ -14,6 +14,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import static me.ogsammenr.skyblock.util.MessageUtil.sendDenyMessage;
+
 // Artık doğrudan ServerPlayer sınıfına sızıyoruz. (Client kontrolüne veya cast işlemine gerek kalmadı!)
 @Mixin(ServerPlayer.class)
 public class ServerPlayerMixin {
@@ -28,7 +30,7 @@ public class ServerPlayerMixin {
         if (!player.level().dimension().equals(SkyblockMain.SKYBLOCK_WORLD_KEY)) return;
 
         if (!IslandProtection.canPerformAction(player, player.blockPosition(), IslandAction.ITEM_DROP)) {
-            player.sendSystemMessage(Component.literal("§cBu adada yere eşya atamazsın!"));
+            sendDenyMessage(player, IslandAction.ITEM_DROP);
 
             // İşlemi iptal et (Eşya sunucuda hiç silinmez)
             ci.cancel();
@@ -58,8 +60,7 @@ public class ServerPlayerMixin {
 
             if (stack == null || stack.isEmpty()) return;
 
-            player.sendSystemMessage(Component.literal("§cBu adada yere eşya atamazsın!"));
-
+            sendDenyMessage(player, IslandAction.ITEM_PICKUP);
             // İşlemi iptal et (Eşya dünyaya düşmez)
             cir.setReturnValue(null);
 
