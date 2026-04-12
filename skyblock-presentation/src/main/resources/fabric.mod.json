@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "skyblock-presentation",
+  "version": "${version}",
+
+  "name": "skyblock-presentation",
+  "description": "",
+  "authors": [],
+  "contact": {},
+
+  "license": "GPL-3.0",
+  "icon": "assets/skyblock-presentation/icon.png",
+
+  "environment": "server",
+  "entrypoints": {
+    "main": ["me.ogsammaenr.skyblockPresentation.SkyblockPresentation"]
+  },
+
+
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}

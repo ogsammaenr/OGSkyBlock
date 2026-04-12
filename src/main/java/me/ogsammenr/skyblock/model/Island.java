@@ -10,7 +10,6 @@ public class Island {
     private final UUID islandUUID;
     private final BlockPos center;
     private BlockPos spawnPoint;
-
     // PlayerUUID -> IslandRole
     private final Map<UUID, IslandRole> members = new HashMap<>();
     // IslandAction -> Minimum Required Role

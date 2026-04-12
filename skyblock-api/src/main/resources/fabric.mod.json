@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "skyblock-api",
+  "version": "${version}",
+
+  "name": "skyblock-api",
+  "description": "",
+  "authors": [],
+  "contact": {},
+
+  "license": "GPL-3.0",
+  "icon": "assets/skyblock-api/icon.png",
+
+  "environment": "server",
+  "entrypoints": {
+    "main": ["me.ogsammaenr.skyblockApi.SkyblockApi"]
+  },
+
+
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
