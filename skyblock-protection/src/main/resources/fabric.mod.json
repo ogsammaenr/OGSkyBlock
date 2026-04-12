@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "skyblock-protection",
+  "version": "${version}",
+
+  "name": "skyblock-protection",
+  "description": "",
+  "authors": [],
+  "contact": {},
+
+  "license": "GPL-3.0",
+  "icon": "assets/skyblock-protection/icon.png",
+
+  "environment": "server",
+  "entrypoints": {
+    "main": ["me.ogsammaenr.skyblockProtection.SkyblockProtection"]
+  },
+
+
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
