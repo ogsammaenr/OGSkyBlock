@@ -1,3 +1,4 @@
+// Dosya: settings.gradle
 pluginManagement {
 	repositories {
 		maven {
@@ -8,3 +9,11 @@ pluginManagement {
 		gradlePluginPortal()
 	}
 }
+
+rootProject.name = 'OGSkyBlock'
+
+include("skyblock-api")
+include("skyblock-core")
+include("skyblock-protection")
+include("skyblock-presentation")
+include("skyblock-leveling")
