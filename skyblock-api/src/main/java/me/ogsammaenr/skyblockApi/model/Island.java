@@ -62,6 +62,10 @@ public class Island {
         return this.isDirty;
     }
 
+    public void clearDirty() {
+        this.isDirty = false;
+    }
+
     // Getters & Setters
     public Location getSpawnPoint() { return spawnPoint; }
 
@@ -81,4 +85,8 @@ public class Island {
     public BlockCoordinate getCenter() { return center; }
 
     public int getRadius() { return radius; }
+
+    public boolean isMember(UUID playerId) {
+        return members.containsKey(playerId);
+    }
 }

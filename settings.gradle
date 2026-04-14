@@ -1,4 +1,3 @@
-// Dosya: settings.gradle
 pluginManagement {
 	repositories {
 		maven {
@@ -17,3 +16,4 @@ include("skyblock-core")
 include("skyblock-protection")
 include("skyblock-presentation")
 include("skyblock-leveling")
+include("skyblock-world")

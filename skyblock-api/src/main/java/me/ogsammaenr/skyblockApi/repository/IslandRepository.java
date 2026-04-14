@@ -49,9 +49,7 @@ public interface IslandRepository {
     @NotNull
     CompletableFuture<List<Island>> getIslandsByMember(@NotNull UUID playerId);
 
-    @NotNull CompletableFuture<Optional<Island>> loadIsland(@NotNull IslandID id);
-
-    /**
+       /**
      * Veritabanındaki tüm ada kimliklerini çeker.
      * Sunucu açılışında Grid sınırlarını hesaplamak için kullanılır.
      */

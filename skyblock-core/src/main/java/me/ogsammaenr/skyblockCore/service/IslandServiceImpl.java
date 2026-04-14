@@ -1,11 +1,15 @@
 package me.ogsammaenr.skyblockCore.service;
 
 import me.ogsammaenr.skyblockApi.math.BlockCoordinate;
+import me.ogsammaenr.skyblockApi.math.Location;
 import me.ogsammaenr.skyblockApi.model.Island;
 import me.ogsammaenr.skyblockApi.model.IslandID;
+import me.ogsammaenr.skyblockApi.model.IslandTemplate;
 import me.ogsammaenr.skyblockApi.repository.IslandRepository;
 import me.ogsammaenr.skyblockApi.service.IslandService;
+import me.ogsammaenr.skyblockCore.math.IslandGridCalculator;
 import me.ogsammaenr.skyblockCore.registry.IslandRegistry;
+import me.ogsammaenr.skyblockCore.registry.IslandTemplateRegistry;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
@@ -18,46 +22,62 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class IslandServiceImpl implements IslandService {
 
-    private final IslandRepository repository;
-    private final IslandRegistry registry;
+    private final IslandRegistry islandRegistry;
+    private final IslandTemplateRegistry templateRegistry;
+    private final IslandRepository repository; // EKSİKTİ: Veritabanı işlemleri için eklendi
 
-    // Basit Grid (Izgara) hesaplaması için geçici sayaç (Gerçek sistemde DB'den son ID okunmalı)
-    private final AtomicInteger islandCounter = new AtomicInteger(0);
-    private static final int GRID_SPACING = 1000; // Adalar arası 1000 blok mesafe
+    // Veritabanındaki toplam ada sayısını startup'ta çekip buna eşitlemelisin
+    private final AtomicInteger totalIslandCount = new AtomicInteger(0);
 
-    public IslandServiceImpl(IslandRepository repository, IslandRegistry registry) {
+    public IslandServiceImpl(IslandRegistry islandRegistry, IslandTemplateRegistry templateRegistry, IslandRepository repository) {
+        this.islandRegistry = islandRegistry;
+        this.templateRegistry = templateRegistry;
         this.repository = repository;
-        this.registry = registry;
     }
 
     @Override
     public @NotNull Optional<Island> getLoadedIsland(@NotNull IslandID id) {
-        return registry.getIsland(id);
+        return islandRegistry.getIsland(id);
     }
 
     @Override
     public @NotNull Optional<Island> getLoadedIslandByPlayer(@NotNull UUID playerId) {
-        return registry.getIslandByPlayer(playerId);
+        return islandRegistry.getIslandByPlayer(playerId);
     }
 
     @Override
-    public @NotNull CompletableFuture<Island> createIsland(@NotNull UUID ownerId, @NotNull String templateId) {
+    @NotNull
+    public CompletableFuture<Island> createIsland(@NotNull UUID ownerId, @NotNull String templateId) {
+        if (islandRegistry.getIslandByPlayer(ownerId).isPresent()) {
+            return CompletableFuture.failedFuture(new IllegalStateException("Oyuncunun zaten bir adası var."));
+        }
+
+        IslandTemplate template = templateRegistry.getTemplate(templateId)
+                .orElseThrow(() -> new IllegalArgumentException("Böyle bir şablon bulunamadı: " + templateId));
+
         return CompletableFuture.supplyAsync(() -> {
-            // 1. O(1) Grid Koordinat Hesaplama (Spiral veya Lineer Algoritma)
-            int count = islandCounter.getAndIncrement();
-            int x = (count % 100) * GRID_SPACING;
-            int z = (count / 100) * GRID_SPACING;
-            BlockCoordinate center = new BlockCoordinate(x, 64, z);
+            int nextIndex = totalIslandCount.getAndIncrement();
+            BlockCoordinate centerCoords = IslandGridCalculator.calculateNextLocation(nextIndex);
 
-            // 2. Domain Nesnesini Oluştur
-            Island newIsland = new Island(IslandID.random(), ownerId, center);
+            Island newIsland = new Island(
+                    new IslandID(UUID.randomUUID()),
+                    ownerId,
+                    centerCoords
+            );
 
-            // 3. Veritabanına (SQL) Kaydet ve Önbelleğe (RAM) Al
-            repository.saveIsland(newIsland);
-            registry.registerToCache(newIsland);
+            Location offset = template.spawnOffset();
+            Location actualSpawn = Location.at(
+                    offset.x() + centerCoords.x(),
+                    offset.y() + centerCoords.y(),
+                    offset.z() + centerCoords.z()
+                    // Eğer Location class'ında yaw/pitch varsa buraya eklemelisin
+            );
+            newIsland.setSpawnPoint(actualSpawn);
+            newIsland.markDirty();
 
-            // 4. TODO: Burada Custom Event fırlatılmalı (Örn: IslandCreateEvent)
-            // skyblock-core içindeki WorldPasting sistemi bu eventi dinleyip adayı fiziksel olarak dünyaya yapıştıracak.
+            islandRegistry.registerToCache(newIsland);
+
+            // EVENT FIRLAT: Örn: EventManager.call(new IslandCreateEvent(newIsland, template));
 
             return newIsland;
         });
@@ -65,23 +85,25 @@ public class IslandServiceImpl implements IslandService {
 
     @Override
     public void deleteIsland(@NotNull IslandID id) {
-        registry.unregisterFromCache(id);
-        repository.deleteIsland(id);
+        islandRegistry.unregisterFromCache(id);
+
+        // Veritabanından asenkron olarak sil (Repository'de delete(IslandID) metodu olmalı)
+        CompletableFuture.runAsync(() -> repository.deleteIsland(id));
+
         // TODO: Dünyadaki blokları havaya (AIR) dönüştürecek Event fırlatılmalı.
     }
 
     @Override
     public void addMember(@NotNull IslandID id, @NotNull UUID playerId, int roleWeight) {
-        registry.getIsland(id).ifPresent(island -> {
-            island.addMember(playerId, roleWeight);
-            // Caffeine'e adanın güncellendiğini bildirmek için (gerekirse diske yazması için) dirty işaretledik
+        islandRegistry.getIsland(id).ifPresent(island -> {
+            island.addMember(playerId, roleWeight); // Island modeline göre düzeltildi
             island.markDirty();
         });
     }
 
     @Override
     public void removeMember(@NotNull IslandID id, @NotNull UUID playerId) {
-        registry.getIsland(id).ifPresent(island -> {
+        islandRegistry.getIsland(id).ifPresent(island -> {
             island.removeMember(playerId);
             island.markDirty();
         });
@@ -89,19 +111,24 @@ public class IslandServiceImpl implements IslandService {
 
     @Override
     public void changeMemberRole(@NotNull IslandID id, @NotNull UUID playerId, int newRoleWeight) {
-        registry.getIsland(id).ifPresent(island -> {
-            island.changeMemberRole(playerId, newRoleWeight);
-            island.markDirty();
+        islandRegistry.getIsland(id).ifPresent(island -> {
+            if (island.isMember(playerId)) {
+                island.changeMemberRole(playerId, newRoleWeight);
+                island.markDirty();
+            }
         });
     }
 
     @Override
     public void loadIslandToCache(@NotNull IslandID id) {
-        if (registry.getIsland(id).isPresent()) return; // Zaten yüklü
+        if (islandRegistry.getIsland(id).isPresent()) return;
 
-        repository.loadIsland(id).thenAccept(optionalIsland ->
-                optionalIsland.ifPresent(registry::registerToCache)
-        ).exceptionally(ex -> {
+        // DÜZELTME: Exception tip uyuşmazlığı giderildi
+        repository.loadIsland(id).thenAccept(optionalIsland -> {
+            if (optionalIsland != null && optionalIsland.isPresent()) {
+                islandRegistry.registerToCache(optionalIsland.get());
+            }
+        }).exceptionally(ex -> {
             ex.printStackTrace();
             return null;
         });
@@ -109,6 +136,6 @@ public class IslandServiceImpl implements IslandService {
 
     @Override
     public void unloadIslandFromCache(@NotNull IslandID id) {
-        registry.unregisterFromCache(id);
+        islandRegistry.unregisterFromCache(id);
     }
 }

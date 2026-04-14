@@ -5,42 +5,58 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import me.ogsammaenr.skyblockApi.model.Island;
 import me.ogsammaenr.skyblockApi.model.IslandID;
+import me.ogsammaenr.skyblockApi.repository.IslandRepository;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class IslandRegistry {
 
-    // Caffeine Cache: Belirli bir süre inaktif kalan adaları otomatik siler (Time-To-Idle)
-    private final Cache<IslandID, Island> activeIslands;
-
-    // Hızlı Erişim İndeksi
+    private final Cache<IslandID, Island> islandCache;
     private final Map<UUID, IslandID> playerIslandIndex = new ConcurrentHashMap<>();
+    private final IslandRepository repository;
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
-    public IslandRegistry() {
-        this.activeIslands = Caffeine.newBuilder()
-                .expireAfterAccess(30, TimeUnit.MINUTES) // Adaya 30 dk kimse girmezse RAM'den uçur
-                .maximumSize(5000) // Maksimum yüklü ada sayısı (OOM koruması)
-                .removalListener((IslandID key, Island island, RemovalCause cause) -> {
-                    if (island != null) {
-                        handleIslandEviction(island, cause);
-                    }
-                })
+    public IslandRegistry(@NotNull IslandRepository repository) {
+        this.repository = repository;
+
+        this.islandCache = Caffeine.newBuilder()
+                .expireAfterAccess(30, TimeUnit.MINUTES) // 30 dk işlem görmeyen adayı RAM'den at
+                .maximumSize(1000)
+                .removalListener(this::handleIslandEviction)
                 .build();
+
+        // Write-Behind: Periyodik toplu kayıt
+        startWriteBehindTask();
     }
 
-    private void handleIslandEviction(Island island, RemovalCause cause) {
-        // Not: Eğer ada "dirty" ise, RAM'den silinmeden hemen önce diske yazılması için
-        // Repository'nin save metoduna veya bir Event'e gönderilmesi gerekir.
+    private void startWriteBehindTask() {
+        scheduler.scheduleAtFixedRate(() -> {
+            List<Island> dirtyIslands = getDirtyIslands();
+
+            if (!dirtyIslands.isEmpty()) {
+                // Batch save işlemi
+                repository.saveAll(dirtyIslands);
+
+                // Island modeline setDirty(boolean flag) veya clearDirty() adında bir metod eklemelisin.
+                // markDirty() genelde true yapar, yazıldıktan sonra false yapmamız gerek.
+                dirtyIslands.forEach(Island::clearDirty);
+            }
+        }, 5, 5, TimeUnit.MINUTES);
+    }
+
+    private void handleIslandEviction(IslandID id, Island island, RemovalCause cause) {
+        if (island == null) return;
+
+        // Cache'den atılma sebebi ne olursa olsun eğer veri kirliyse diske yaz.
         if (island.isDirty()) {
-            System.out.println("[OGSkyBlock] Ada RAM'den siliniyor, diske yazılmalı: " + island.getIslandID());
-            // TODO: SqliteIslandRepository.saveIsland(island) tetiklenmeli
+            // Sadece saveAll tanımlıysa, singleton list kullanarak tekli kaydı batch yapısına uyarlarız.
+            repository.saveAll(Collections.singletonList(island));
         }
 
         // Bellek sızıntısını önlemek için hızlı indeksten de temizliyoruz
@@ -48,40 +64,36 @@ public class IslandRegistry {
     }
 
     public void registerToCache(@NotNull Island island) {
-        activeIslands.put(island.getIslandID(), island);
+        islandCache.put(island.getIslandID(), island);
         playerIslandIndex.put(island.getOwnerId(), island.getIslandID());
     }
 
     public void unregisterFromCache(@NotNull IslandID id) {
-        activeIslands.invalidate(id); // Bu işlem otomatik olarak removalListener'ı tetikler
+        islandCache.invalidate(id); // Bu işlem otomatik olarak removalListener'ı (handleIslandEviction) tetikler
     }
 
     @NotNull
     public Optional<Island> getIsland(@NotNull IslandID id) {
-        return Optional.ofNullable(activeIslands.getIfPresent(id));
+        return Optional.ofNullable(islandCache.getIfPresent(id));
     }
 
     @NotNull
     public Optional<Island> getIslandByPlayer(@NotNull UUID playerId) {
         IslandID islandId = playerIslandIndex.get(playerId);
-        if (islandId != null) {
-            return getIsland(islandId);
-        }
 
-        return activeIslands.asMap().values().stream()
-                .filter(island -> island.getPlayerRoleWeight(playerId) > 0)
-                .findFirst();
+        // Endekste varsa adayı getir (Bu işlem ada süresini SIFIRLAR), yoksa boş dön.
+        return islandId != null ? getIsland(islandId) : Optional.empty();
+    }
+
+    @NotNull
+    public List<Island> getDirtyIslands() {
+        return islandCache.asMap().values().stream()
+                .filter(Island::isDirty)
+                .collect(Collectors.toList());
     }
 
     @NotNull
     public Collection<Island> getAllCachedIslands() {
-        return activeIslands.asMap().values();
-    }
-
-    @NotNull
-    public Collection<Island> getDirtyIslands() {
-        return activeIslands.asMap().values().stream()
-                .filter(Island::isDirty)
-                .collect(Collectors.toList());
+        return islandCache.asMap().values();
     }
 }

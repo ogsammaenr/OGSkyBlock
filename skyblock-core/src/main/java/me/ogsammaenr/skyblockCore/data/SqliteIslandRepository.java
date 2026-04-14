@@ -46,7 +46,7 @@ public class SqliteIslandRepository implements IslandRepository {
 
     @Override
     @NotNull
-    public @NonNull CompletableFuture<Optional<Island>> loadIsland(@NotNull IslandID id) {
+    public CompletableFuture<Optional<Island>> loadIsland(@NotNull IslandID id) {
         return CompletableFuture.supplyAsync(() -> {
             String sql = "SELECT * FROM islands WHERE id = ?";
             try (Connection conn = dataSource.getConnection();
